@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "shaarpec"
+version = "0.1.0"
+description = ""
+authors = ["Erik G. Brandt <erik.brandt@shaarpec.com>"]
+readme = "README.md"
+packages = [{include = "shaarpec", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pydantic = "^1.9.0"
+httpx = "^0.22.0"
+pkce = "^1.0.3"
+jose = "^1.0.0"
+python-dotenv = "^0.20.0"
+background = "^0.2.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.13.4"
+black = "^22.3.0"
+jupyterlab = "^3.3.2"
+jupyterlab-code-formatter = "^1.4.10"
+isort = "^5.10.1"
+ipython = "^8.2.0"
+jupytext = "^1.13.7"
+pytest = "^7.1.1"
+pytest_check = "^1.0.5"
+Pygments = "^2.11.2"
+devtools = "^0.8.0"
+respx = "^0.19.2"
+
+[tool.pylint.'MESSAGES CONTROL']
+extension-pkg-whitelist = "pydantic"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

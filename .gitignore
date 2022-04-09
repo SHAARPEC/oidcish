@@ -1,0 +1,3 @@
+dist/*
+notebooks/*
+**/__pycache__
