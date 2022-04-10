@@ -11,9 +11,10 @@ python = "^3.8"
 pydantic = "^1.9.0"
 httpx = "^0.22.0"
 pkce = "^1.0.3"
-jose = "^1.0.0"
 python-dotenv = "^0.20.0"
 background = "^0.2.1"
+python-jose = "^3.3.0"
+cryptography = "^36.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
