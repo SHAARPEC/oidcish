@@ -1,14 +1,15 @@
 """Client module."""
-from typing import Optional
-import time
 import json
+import time
+from typing import Optional
 
 import background
 import httpx
 from pydantic import ValidationError
 
-from shaarpec.settings import IdpSettings
-from shaarpec import models
+from oidcish.settings import IdpSettings
+from oidcish.constants import DeviceStatus
+from oidcish import models
 
 
 class IdpAuthenticator:
@@ -17,7 +18,7 @@ class IdpAuthenticator:
     def __init__(self, host: str, **kwargs) -> None:
         self._client = httpx.Client(base_url=host, timeout=kwargs.pop("timeout", 3.0))
         self._idp = self.discover()
-        self._signed_in = False
+        self._status = DeviceStatus.UNINITIALIZED
         self._settings = IdpSettings(host=host, **kwargs)
         self._credentials: Optional[models.IdpCredentials] = None
 
@@ -44,16 +45,19 @@ class IdpAuthenticator:
         try:
             verification = models.IdpDeviceVerification.parse_obj(response.json())
         except json.JSONDecodeError as exc:
+            self._status = DeviceStatus.ERROR
             raise ValueError(
                 f"Failed to decode response {response.text} as json "
                 f"from {self._idp.device_authorization_endpoint}"
             ) from exc
         except ValidationError as exc:
+            self._status = DeviceStatus.ERROR
             raise RuntimeError(
                 f"Failed to validate device code data {response.json()} "
                 f"from {self._idp.device_authorization_endpoint}."
             ) from exc
         else:
+            self._status = DeviceStatus.PENDING
             print(
                 f"Visit {verification.verification_uri_complete} to complete sign-in."
             )
@@ -89,39 +93,44 @@ class IdpAuthenticator:
                     if error_msg == "authorization_pending":
                         time.sleep(verification.interval)
                     else:
+                        self._status = DeviceStatus.ERROR
                         raise httpx.HTTPStatusError(
                             request=exc.request,
                             response=exc.response,
                             message=f"Unexpected error message {error_msg}.",
                         ) from exc
                 else:
+                    self._status = DeviceStatus.ERROR
                     raise httpx.HTTPStatusError(
                         request=exc.request,
                         response=exc.response,
                         message=f"Unexpected response {response.text}.",
                     )
             except json.JSONDecodeError as exc:
+                self._status = DeviceStatus.ERROR
                 raise ValueError(
                     f"Failed to decode response {response.text} as json "
                     f"from {self._idp.device_authorization_endpoint}"
                 ) from exc
             except ValidationError as exc:
+                self._status = DeviceStatus.ERROR
                 raise RuntimeError(
                     f"Failed to validate device code data {response.json()} "
                     f"from {self._idp.device_authorization_endpoint}."
                 ) from exc
             else:
-                print(f"Signed in after {elapsed} seconds.")
-                self._signed_in = True
+                self._status = DeviceStatus.SUCCESS
+                print(f"{self.status} Took {elapsed} seconds.")
                 break
 
-        if not self.signed_in:
-            print("Warning: Sign-in time expired without confirmation.")
+        if self.status is DeviceStatus.PENDING:
+            self._status = DeviceStatus.NO_CONFIRMATION
+            print(f"Warning: {self.status}")
 
     @property
-    def signed_in(self) -> bool:
-        """Whether client is signed in to host."""
-        return self._signed_in
+    def status(self) -> DeviceStatus:
+        """Return the authentication status."""
+        return self._status
 
     @property
     def credentials(self) -> Optional[models.IdpCredentials]:
