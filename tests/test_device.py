@@ -101,8 +101,8 @@ class TestErrorsWithConnection:
         ).side_effect = httpx.ConnectTimeout
 
         with pytest.raises(httpx.ConnectTimeout):
-            auth = IdpAuthenticator(self.data.host, timeout=3)
-            check.equal(auth.status, AuthenticationStatus.ERROR)
+            auth = DeviceFlow(self.data.host, timeout=3)
+            check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.host)
     def test_discovery_document_not_found_raises_status_error(
@@ -114,8 +114,8 @@ class TestErrorsWithConnection:
         ).return_value = httpx.Response(404, text="")
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = IdpAuthenticator(self.data.host)
-            check.equal(auth.status, AuthenticationStatus.ERROR)
+            auth = DeviceFlow(self.data.host)
+            check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.host)
     def test_device_authorization_endpoint_not_found_raises_status_error(
@@ -133,8 +133,8 @@ class TestErrorsWithConnection:
         )
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = IdpAuthenticator(self.data.host)
-            check.equal(auth.status, AuthenticationStatus.ERROR)
+            auth = DeviceFlow(self.data.host)
+            check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.host)
     def test_device_authorization_endpoint_ok_but_no_json_raises_value_error(
@@ -152,46 +152,40 @@ class TestErrorsWithConnection:
         )
 
         with pytest.raises(ValueError):
-            auth = IdpAuthenticator(self.data.host)
-            check.equal(auth.status, AuthenticationStatus.ERROR)
+            auth = DeviceFlow(self.data.host)
+            check.equal(auth.status, DeviceStatus.ERROR)
+
+    def test_device_authorization_times_out_without_confirmation(
+        self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
+    ) -> None:
+        """Test that the authorization fails without confirmation."""
+        for (var, value) in self.data.env.items():
+            monkeypatch.setenv(var, value)
+
+        respx_mock.get(
+            ".well-known/openid-configuration"
+        ).return_value = httpx.Response(200, json=self.data.doc)
+        respx_mock.post("connect/deviceauthorization").return_value = httpx.Response(
+            200, json=self.data.device_authorization
+        )
+        respx_mock.post("connect/token").return_value = httpx.Response(
+            400, json={"error": "authorization_pending"}
+        )
+
+        auth = DeviceFlow(self.data.host)
+        # Wait 10% extra so that confirmation expires
+        time.sleep(self.data.device_authorization["expires_in"] * 1.1)
+        check.equal(auth.status, DeviceStatus.NO_CONFIRMATION)
 
 
-# class TestErrorsWithSignin:
-#     """Test suite for sign-in errors."""
-
-#     data = IdpData()
-#     codec = ClaimsCodec.from_size(kid="12345", use="sig")
-
-#     def test_device_authorization_times_out_without_confirmation(
-#         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
-#     ) -> None:
-#         for (var, value) in self.data.env.items():
-#             monkeypatch.setenv(var, value)
-
-#         respx_mock.get(
-#             ".well-known/openid-configuration"
-#         ).return_value = httpx.Response(200, json=self.data.doc)
-#         respx_mock.post("connect/deviceauthorization").return_value = httpx.Response(
-#             200, json=self.data.device_authorization
-#         )
-#         respx_mock.post("connect/token").return_value = httpx.Response(
-#             200, json={"error": "authorization_pending"}
-#         )
-
-#         # with pytest.raises(jose.exceptions.ExpiredSignatureError):
-#         auth = IdpAuthenticator(self.data.host)
-
-#         time.sleep(self.data.device_authorization["expires_in"] + 2)
-
-#         check.equal(auth.status, AuthenticationStatus.SUCCESS)
-
-
+# pylint: disable=too-few-public-methods
 class TestSuccessWithSignin:
     """Test suite for successful sign-ins."""
 
     data = IdpData()
+    codec = Codec.from_size(kid="12345", use="sig")
 
-    def test_succesful_signin(
+    def test_successful_signin(
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> None:
         """Test that device can sign in."""
@@ -205,28 +199,38 @@ class TestSuccessWithSignin:
             200, json=self.data.device_authorization
         )
 
-        access_claims = {
+        claims = {
             "nbf": pendulum.now().int_timestamp,
-            "exp": pendulum.now().add(seconds=self.data.token_info["expires_in"]),
+            "exp": pendulum.now().add(seconds=60),
             "iss": self.data.host,
             "aud": self.data.host,
-            "client_id": self.data.env["CLIENT_ID"],
+            "client_id": self.data.env["OICDISH_CLIENT_ID"],
             "sub": "foo",
             "auth_time": pendulum.now().subtract(seconds=10).int_timestamp,
-            "role": "databases.neo4j",
-            "jti": uuid4(),
-            "sid": uuid4(),
+            "role": "databases.default",
+            "jti": str(uuid4()),
+            "sid": str(uuid4()),
             "iat": pendulum.now().int_timestamp,
-            "scope": self.data.env["SCOPE"],
+            "scope": self.data.env["OICDISH_SCOPE"],
             "amr": ["pwd"],
         }
 
+        access_token = self.codec.encode(claims)
+        claims.pop("scope")
+        id_token = self.codec.encode(claims)
+
         respx_mock.post("connect/token").return_value = httpx.Response(
-            200, json=self.data.token_info
+            200,
+            json={
+                "id_token": id_token,
+                "access_token": access_token,
+                "expires_in": 5,
+                "token_type": "Bearer",
+                "refresh_token": secrets.token_hex(nbytes=32).upper(),
+                "scope": self.data.env["OICDISH_SCOPE"],
+            },
         )
 
-        auth = IdpAuthenticator(self.data.host)
-
+        auth = DeviceFlow(self.data.host)
         time.sleep(self.data.device_authorization["expires_in"])
-
-        check.equal(auth.status, AuthenticationStatus.SUCCESS)
+        check.equal(auth.status, DeviceStatus.SUCCESS)
