@@ -1,12 +1,12 @@
 """Device code flow tests."""
-from typing import List, Dict, Union, Any
 import time
+import secrets
+from typing import List, Dict, Union, Any
 from uuid import uuid4
 
 import httpx
 import respx
 import pendulum
-import jose
 import pytest
 import pytest_check as check
 
@@ -80,12 +80,10 @@ class IdpData(BaseModel):
     }
 
     env: Dict[str, str] = {
-        "CLIENT_ID": "test_client_id",
-        "CLIENT_SECRET": "test_client_secret",
-        "SCOPE": "test_scope1 test_scope2",
+        "OICDISH_CLIENT_ID": "test_client_id",
+        "OICDISH_CLIENT_SECRET": "test_client_secret",
+        "OICDISH_SCOPE": "test_scope1 test_scope2",
     }
-
-    token_info: Dict[str, Any] = {"expires_in": 60, "token_type": "Bearer"}
 
 
 class TestErrorsWithConnection:
