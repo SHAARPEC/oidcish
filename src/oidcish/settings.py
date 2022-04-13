@@ -3,8 +3,8 @@
 from pydantic import BaseSettings, Field
 
 
-class IdpSettings(BaseSettings):
-    """Settings for API client."""
+class DeviceSettings(BaseSettings):
+    """Settings for device."""
 
     host: str = Field(default=...)
     client_id: str = Field(default=...)
@@ -15,6 +15,6 @@ class IdpSettings(BaseSettings):
     class Config:
         """Additional configuration."""
 
-        env_prefix = "shaarpec_idp_"
+        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oicdish_")
         env_file = ".env"
         extra = "ignore"

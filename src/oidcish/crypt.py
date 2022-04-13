@@ -76,8 +76,8 @@ class RsaKeysFactory:
         return {**self.public.to_dict(), **self.headers}
 
 
-class ClaimsCodec:
-    """Class that can use a RsaKeysFactory to encode and decode claims."""
+class Codec:
+    """Class that uses a RsaKeysFactory to encode and decode claims."""
 
     def __init__(self, key: RsaKeysFactory) -> None:
         self._key = key
@@ -88,13 +88,13 @@ class ClaimsCodec:
         key_size: int = 2048,
         algorithm: str = jose.constants.Algorithms.RS256,
         **kwargs,
-    ) -> ClaimsCodec:
-        """Create a ClaimsCodec that uses the given key size and algorithm."""
+    ) -> Codec:
+        """Create a Codec that uses the given key size and algorithm."""
         key_factory = RsaKeysFactory(key_size=key_size, algorithm=algorithm, **kwargs)
         return cls(key=key_factory)
 
     def encode(self, claims: Mapping[Any, Any]) -> str:
-        """Encode the claims.
+        """Encode claims.
 
         kwargs are used as extra headers.
         """

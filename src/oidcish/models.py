@@ -33,7 +33,7 @@ class Idp(BaseModel):
     userinfo_endpoint: str
 
 
-class IdpCredentials(BaseModel):
+class Credentials(BaseModel):
     """Credentials from IDP server."""
 
     id_token: str
@@ -44,7 +44,7 @@ class IdpCredentials(BaseModel):
     scope: str
 
 
-class IdpDeviceVerification(BaseModel):
+class DeviceVerification(BaseModel):
     """Device verification from IDP server."""
 
     device_code: str
@@ -55,7 +55,7 @@ class IdpDeviceVerification(BaseModel):
     interval: int
 
 
-class TokenClaimsSet(BaseModel):
+class Claims(BaseModel):
     """Set of reserved claims for a token."""
 
     nbf: int

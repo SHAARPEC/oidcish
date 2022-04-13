@@ -12,7 +12,7 @@ import pytest_check as check
 
 from pydantic import BaseModel
 
-from oidcish import IdpAuthenticator
+from oidcish import DeviceFlow
 from oidcish.crypt import Codec
 from oidcish.constants import DeviceStatus
 

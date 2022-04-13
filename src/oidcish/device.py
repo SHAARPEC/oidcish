@@ -7,20 +7,20 @@ import background
 import httpx
 from pydantic import ValidationError
 
-from oidcish.settings import IdpSettings
+from oidcish.settings import DeviceSettings
 from oidcish.constants import DeviceStatus
 from oidcish import models
 
 
-class IdpAuthenticator:
-    """Class authenticates with the IDP server."""
+class DeviceFlow:
+    """Class authenticates with IDP server using device flow."""
 
     def __init__(self, host: str, **kwargs) -> None:
         self._client = httpx.Client(base_url=host, timeout=kwargs.pop("timeout", 3.0))
         self._idp = self.discover()
         self._status = DeviceStatus.UNINITIALIZED
-        self._settings = IdpSettings(host=host, **kwargs)
-        self._credentials: Optional[models.IdpCredentials] = None
+        self._settings = DeviceSettings(host=host, **kwargs)
+        self._credentials: Optional[models.Credentials] = None
 
         # Initiate sign-in procedure
         self.init()
@@ -43,7 +43,7 @@ class IdpAuthenticator:
         assert response.status_code == 200
 
         try:
-            verification = models.IdpDeviceVerification.parse_obj(response.json())
+            verification = models.DeviceVerification.parse_obj(response.json())
         except json.JSONDecodeError as exc:
             self._status = DeviceStatus.ERROR
             raise ValueError(
@@ -66,9 +66,7 @@ class IdpAuthenticator:
             self.__signin_once_confirmed(verification)
 
     @background.task
-    def __signin_once_confirmed(
-        self, verification: models.IdpDeviceVerification
-    ) -> None:
+    def __signin_once_confirmed(self, verification: models.DeviceVerification) -> None:
         """Background tasks that signs in once the user confirms the device."""
         data = self._settings.dict()
         data.pop("host")
@@ -86,7 +84,7 @@ class IdpAuthenticator:
 
             try:
                 response.raise_for_status()
-                self._credentials = models.IdpCredentials.parse_obj(response.json())
+                self._credentials = models.Credentials.parse_obj(response.json())
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 400:
                     error_msg = exc.response.json().get("error")
@@ -133,6 +131,6 @@ class IdpAuthenticator:
         return self._status
 
     @property
-    def credentials(self) -> Optional[models.IdpCredentials]:
+    def credentials(self) -> Optional[models.Credentials]:
         """Access IDP credentials."""
         return self._credentials
