@@ -108,3 +108,8 @@ class Codec:
     def decode(self, token: str) -> Mapping[Any, Any]:
         """Decode the claims in the token."""
         return jose.jwt.decode(token, key=self._key.public_dict)
+
+    @property
+    def key(self):
+        """Access RSA key."""
+        return self._key

@@ -1,20 +1,18 @@
 """Device code flow tests."""
-import time
 import secrets
+import time
 from typing import List, Dict, Union, Any
 from uuid import uuid4
 
 import httpx
-import respx
 import pendulum
 import pytest
 import pytest_check as check
-
+import respx
 from pydantic import BaseModel
 
-from oidcish import DeviceFlow
 from oidcish.crypt import Codec
-from oidcish.constants import DeviceStatus
+from oidcish.device import Device, DeviceStatus, DeviceSettings
 
 
 class IdpData(BaseModel):
@@ -80,9 +78,10 @@ class IdpData(BaseModel):
     }
 
     env: Dict[str, str] = {
-        "OICDISH_CLIENT_ID": "test_client_id",
-        "OICDISH_CLIENT_SECRET": "test_client_secret",
-        "OICDISH_SCOPE": "test_scope1 test_scope2",
+        "OIDCISH_CLIENT_ID": "test_client_id",
+        "OIDCISH_CLIENT_SECRET": "test_client_secret",
+        "OIDCISH_SCOPE": "test_scope1 test_scope2",
+        "OIDCISH_AUDIENCE": "aud",
     }
 
 
@@ -101,7 +100,7 @@ class TestErrorsWithConnection:
         ).side_effect = httpx.ConnectTimeout
 
         with pytest.raises(httpx.ConnectTimeout):
-            auth = DeviceFlow(self.data.host, timeout=3)
+            auth = Device(self.data.host, timeout=3)
             check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.host)
@@ -114,7 +113,7 @@ class TestErrorsWithConnection:
         ).return_value = httpx.Response(404, text="")
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = DeviceFlow(self.data.host)
+            auth = Device(self.data.host)
             check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.host)
@@ -133,8 +132,14 @@ class TestErrorsWithConnection:
         )
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = DeviceFlow(self.data.host)
+            auth = Device(self.data.host)
             check.equal(auth.status, DeviceStatus.ERROR)
+
+
+class TestErrorsWithParsing:
+    """Test suite for parsing errors."""
+
+    data = IdpData()
 
     @pytest.mark.respx(base_url=data.host)
     def test_device_authorization_endpoint_ok_but_no_json_raises_value_error(
@@ -152,9 +157,10 @@ class TestErrorsWithConnection:
         )
 
         with pytest.raises(ValueError):
-            auth = DeviceFlow(self.data.host)
+            auth = Device(self.data.host)
             check.equal(auth.status, DeviceStatus.ERROR)
 
+    @pytest.mark.respx(base_url=data.host)
     def test_device_authorization_times_out_without_confirmation(
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> None:
@@ -172,7 +178,7 @@ class TestErrorsWithConnection:
             400, json={"error": "authorization_pending"}
         )
 
-        auth = DeviceFlow(self.data.host)
+        auth = Device(self.data.host)
         # Wait 10% extra so that confirmation expires
         time.sleep(self.data.device_authorization["expires_in"] * 1.1)
         check.equal(auth.status, DeviceStatus.NO_CONFIRMATION)
@@ -204,14 +210,14 @@ class TestSuccessWithSignin:
             "exp": pendulum.now().add(seconds=60),
             "iss": self.data.host,
             "aud": self.data.host,
-            "client_id": self.data.env["OICDISH_CLIENT_ID"],
+            "client_id": self.data.env["OIDCISH_CLIENT_ID"],
             "sub": "foo",
             "auth_time": pendulum.now().subtract(seconds=10).int_timestamp,
             "role": "databases.default",
             "jti": str(uuid4()),
             "sid": str(uuid4()),
             "iat": pendulum.now().int_timestamp,
-            "scope": self.data.env["OICDISH_SCOPE"],
+            "scope": self.data.env["OIDCISH_SCOPE"],
             "amr": ["pwd"],
         }
 
@@ -227,10 +233,10 @@ class TestSuccessWithSignin:
                 "expires_in": 5,
                 "token_type": "Bearer",
                 "refresh_token": secrets.token_hex(nbytes=32).upper(),
-                "scope": self.data.env["OICDISH_SCOPE"],
+                "scope": self.data.env["OIDCISH_SCOPE"],
             },
         )
 
-        auth = DeviceFlow(self.data.host)
+        auth = Device(self.data.host)
         time.sleep(self.data.device_authorization["expires_in"])
         check.equal(auth.status, DeviceStatus.SUCCESS)

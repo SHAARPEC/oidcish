@@ -15,3 +15,16 @@ Library to connect to your OIDC provider via:
 auth = DeviceFlow(host="https://my.idp.com")
 auth.credentials.access_token
 ```
+
+## Options
+
+DeviceFlow can be used with the following options:
+
+| Option|
+
+
+## TODO
+
+- [X] Fix tests.
+- [ ] Add new tests.
+- [ ] Improve README.

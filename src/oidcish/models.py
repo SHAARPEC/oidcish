@@ -1,5 +1,5 @@
 """Models."""
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -68,6 +68,19 @@ class Claims(BaseModel):
     idp: str
     jti: str
     iat: int
-    role: Optional[List[str]] = Field(None)
-    scope: List[str]
+    role: Union[str, List[str], None] = Field(...)
+    scope: Union[str, List[str]] = Field(...)
     amr: List[str]
+
+
+class Jwks(BaseModel):
+    """JWKS key."""
+
+    kty: str
+    use: str
+    kid: str
+    x5t: Optional[str]
+    e: str
+    n: str
+    x5c: Optional[List[str]]
+    alg: str
