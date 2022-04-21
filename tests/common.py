@@ -100,12 +100,6 @@ class MockFlowData(BaseModel):
     )
 
 
-# pylint: disable=too-few-public-methods
-class CommonCodec:
+def mock_codec(kid: str = "12345") -> Codec:
     """Mock a codec."""
-
-    def __call__(self, kid: str = "12345") -> Codec:
-        return Codec.from_size(kid=kid, use="sig")
-
-
-MockCodec = CommonCodec()
+    return Codec.from_size(kid=kid, use="sig")

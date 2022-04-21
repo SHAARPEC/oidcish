@@ -33,6 +33,10 @@ Pygments = "^2.11.2"
 devtools = "^0.8.0"
 respx = "^0.19.2"
 pandas = "^1.4.2"
+pytest-sugar = "^0.9.4"
+pytest-xdist = "^2.5.0"
+pytest-icdiff = "^0.5"
+pytest-timeout = "^2.1.0"
 
 [tool.pylint.'MESSAGES CONTROL']
 extension-pkg-whitelist = "pydantic"

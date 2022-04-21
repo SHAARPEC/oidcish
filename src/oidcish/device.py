@@ -41,12 +41,12 @@ class Device(Flow):
 
         super().__init__(DeviceSettings(host=host, **kwargs))
 
+        # Initiate sign-in procedure
+        self.init()
+
         # Start monitoring auto refresh in background task
         self.auto_refresh = auto_refresh
         self.__auto_refresh(poll_rate)
-
-        # Initiate sign-in procedure in background task
-        self.init()
 
     @background.task
     def __signin_once_confirmed(self, verification: models.DeviceVerification) -> None:
@@ -55,7 +55,9 @@ class Device(Flow):
         data.pop("host")
 
         start = time.time()
-        while (elapsed := time.time() - start) <= verification.expires_in:
+        while (elapsed := time.time() - start) <= verification.expires_in and (
+            self.status is not DeviceStatus.ERROR
+        ):
             response = httpx.post(
                 self._idp.token_endpoint,
                 data=dict(
@@ -89,9 +91,13 @@ class Device(Flow):
                     )
             except json.JSONDecodeError as exc:
                 self._status = DeviceStatus.ERROR
-                raise ValueError(
-                    f"Failed to decode response {response.text} as json "
-                    f"from {self.idp.device_authorization_endpoint}"
+                raise json.JSONDecodeError(
+                    msg=(
+                        "Failed to validate device code data "
+                        f"from {self.idp.device_authorization_endpoint}."
+                    ),
+                    doc=response.text,
+                    pos=exc.pos,
                 ) from exc
             except ValidationError as exc:
                 self._status = DeviceStatus.ERROR
@@ -110,7 +116,7 @@ class Device(Flow):
 
     @background.task
     def __auto_refresh(self, poll_rate: float = 1.0) -> None:
-        while True:
+        while self.status not in {DeviceStatus.NO_CONFIRMATION, DeviceStatus.ERROR}:
             if (
                 self.auto_refresh
                 and (self.access_claims is not None)
@@ -125,12 +131,17 @@ class Device(Flow):
         data.pop("host")
 
         response = self._client.post(self._idp.device_authorization_endpoint, data=data)
-        response.raise_for_status()
-
-        assert response.status_code == 200
 
         try:
+            response.raise_for_status()
             verification = models.DeviceVerification.parse_obj(response.json())
+        except httpx.HTTPStatusError as exc:
+            self._status = DeviceStatus.ERROR
+            raise httpx.HTTPStatusError(
+                request=exc.request,
+                response=exc.response,
+                message=f"Unexpected response {response.text}.",
+            )
         except json.JSONDecodeError as exc:
             self._status = DeviceStatus.ERROR
             raise ValueError(
@@ -144,6 +155,7 @@ class Device(Flow):
                 f"from {self._idp.device_authorization_endpoint}."
             ) from exc
         else:
+            assert response.status_code == 200
             self._status = DeviceStatus.PENDING
             print(
                 f"Visit {verification.verification_uri_complete} to complete sign-in."

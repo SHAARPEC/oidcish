@@ -27,9 +27,9 @@ class TestGeneralFlow:
     """Tests for general authentication flow."""
 
     data = common.MockFlowData()
-    codec = common.MockCodec(kid="12345")
+    codec = common.mock_codec(kid="12345")
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture
     def mock_idp(
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
@@ -46,6 +46,7 @@ class TestGeneralFlow:
 
         return respx_mock
 
+    @pytest.mark.usefixtures("mock_idp")
     def test_get_info_is_successful(self) -> None:
         """Test that provider info is parsed."""
         flow = MockFlow(host=self.data.idp.issuer)
