@@ -6,7 +6,7 @@ from strenum import StrEnum
 import background
 import httpx
 import pendulum
-from pydantic import ValidationError, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from oidcish import models
 from oidcish.flow import Flow, Settings
@@ -32,24 +32,30 @@ class DeviceStatus(StrEnum):
     SUCCESS = "SUCCESS: Authentication was successful."
 
 
+class DeviceVerification(BaseModel):
+    """Device verification from IDP server."""
+
+    device_code: str
+    user_code: str
+    verification_uri: str
+    verification_uri_complete: str
+    expires_in: int
+    interval: int
+
+
 class Device(Flow):
     """Class authenticates with IDP server using device flow."""
 
     def __init__(self, host: str, **kwargs) -> None:
-        auto_refresh = kwargs.pop("auto_refresh", True)
         poll_rate = kwargs.pop("poll_rate", 1.0)
 
         super().__init__(DeviceSettings(host=host, **kwargs))
 
         # Initiate sign-in procedure
-        self.init()
-
-        # Start monitoring auto refresh in background task
-        self.auto_refresh = auto_refresh
-        self.__auto_refresh(poll_rate)
+        self.init(poll_rate=poll_rate)
 
     @background.task
-    def __signin_once_confirmed(self, verification: models.DeviceVerification) -> None:
+    def __signin_once_confirmed(self, verification: DeviceVerification) -> None:
         """Background tasks that signs in once the user confirms the device."""
         data = self.settings.dict()
         data.pop("host")
@@ -59,7 +65,7 @@ class Device(Flow):
             self.status is not DeviceStatus.ERROR
         ):
             response = httpx.post(
-                self._idp.token_endpoint,
+                self.idp.token_endpoint,
                 data=dict(
                     data,
                     grant_type="urn:ietf:params:oauth:grant-type:device_code",
@@ -117,24 +123,22 @@ class Device(Flow):
     @background.task
     def __auto_refresh(self, poll_rate: float = 1.0) -> None:
         while self.status not in {DeviceStatus.NO_CONFIRMATION, DeviceStatus.ERROR}:
-            if (
-                self.auto_refresh
-                and (self.access_claims is not None)
-                and (pendulum.now(tz="UTC").int_timestamp > self.access_claims.exp)
+            if (self.access_claims is not None) and (
+                pendulum.now(tz="UTC").int_timestamp > self.access_claims.exp
             ):
                 self.refresh()
             time.sleep(poll_rate)
 
-    def init(self) -> None:
+    def init(self, poll_rate: float = 1.0) -> None:
         """Initiate sign-in."""
         data = self.settings.dict()
         data.pop("host")
 
-        response = self._client.post(self._idp.device_authorization_endpoint, data=data)
+        response = self._client.post(self.idp.device_authorization_endpoint, data=data)
 
         try:
             response.raise_for_status()
-            verification = models.DeviceVerification.parse_obj(response.json())
+            verification = DeviceVerification.parse_obj(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = DeviceStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -152,7 +156,7 @@ class Device(Flow):
             self._status = DeviceStatus.ERROR
             raise RuntimeError(
                 f"Failed to validate device code data {response.json()} "
-                f"from {self._idp.device_authorization_endpoint}."
+                f"from {self.idp.device_authorization_endpoint}."
             ) from exc
         else:
             assert response.status_code == 200
@@ -163,6 +167,10 @@ class Device(Flow):
 
             # Run sign in procedure as background task
             self.__signin_once_confirmed(verification)
+
+            if poll_rate > 0:
+                # Start monitoring auto refresh in background task
+                self.__auto_refresh(poll_rate)
 
     def refresh(self) -> None:
         """Refresh credentials."""

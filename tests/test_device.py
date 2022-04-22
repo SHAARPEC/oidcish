@@ -12,15 +12,14 @@ import pytest
 import pytest_check as check
 import respx
 
-from oidcish.device import Device, DeviceStatus
-from oidcish import models
+from oidcish.device import Device, DeviceStatus, DeviceVerification
 
 from . import common
 
 
-def mock_device() -> models.DeviceVerification:
+def mock_device() -> DeviceVerification:
     """Mock data for device verification."""
-    return models.DeviceVerification.parse_obj(
+    return DeviceVerification.parse_obj(
         {
             "device_code": "4A53BBC987BB24AF360F9EE38DCAD1CC346F77702D3BFC5D69518DF407366221",
             "user_code": "974954262",

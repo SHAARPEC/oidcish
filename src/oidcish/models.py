@@ -44,17 +44,6 @@ class Credentials(BaseModel):
     scope: str
 
 
-class DeviceVerification(BaseModel):
-    """Device verification from IDP server."""
-
-    device_code: str
-    user_code: str
-    verification_uri: str
-    verification_uri_complete: str
-    expires_in: int
-    interval: int
-
-
 class Claims(BaseModel):
     """Set of reserved claims for a token."""
 
