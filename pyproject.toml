@@ -17,6 +17,7 @@ python-jose = "^3.3.0"
 cryptography = "^36.0.2"
 pendulum = "^2.1.2"
 StrEnum = "^0.4.7"
+beautifulsoup4 = "^4.11.1"
 
 
 [tool.poetry.group.dev.dependencies]

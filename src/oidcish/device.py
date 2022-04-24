@@ -46,6 +46,8 @@ class DeviceVerification(BaseModel):
 class Device(Flow):
     """Class authenticates with IDP server using device flow."""
 
+    settings: DeviceSettings
+
     def __init__(self, host: str, **kwargs) -> None:
         poll_rate = kwargs.pop("poll_rate", 1.0)
 

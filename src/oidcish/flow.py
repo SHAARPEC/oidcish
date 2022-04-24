@@ -2,12 +2,11 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from urllib.parse import urljoin
 
 import httpx
 import jose
 import jose.jwt
-from pydantic import BaseSettings, Field, parse_obj_as, validator
+from pydantic import BaseSettings, Field, parse_obj_as
 from strenum import StrEnum
 
 from oidcish import models
