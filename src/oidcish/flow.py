@@ -1,7 +1,7 @@
 """Definition of authentication flows."""
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, final
 
 import httpx
 import jose
@@ -33,8 +33,8 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 
-class Flow(ABC):
-    """Abstract class for login flows."""
+class AuthenticationFlow(ABC):
+    """Abstract class for authentication flows."""
 
     def __init__(self, settings: Settings) -> None:
         # Set attributes
@@ -45,6 +45,7 @@ class Flow(ABC):
         self._settings = settings
         self._credentials: Optional[models.Credentials] = None
 
+    @final
     def get_info(self) -> models.Idp:
         """Get discovery document from identity provider."""
         response = self._client.get(".well-known/openid-configuration")
@@ -52,6 +53,7 @@ class Flow(ABC):
 
         return models.Idp.parse_obj(response.json())
 
+    @final
     def get_jwks(self) -> List[models.Jwks]:
         """Get public JWK set from identity provider."""
         response = self._client.get(self.idp.jwks_uri)
@@ -59,36 +61,37 @@ class Flow(ABC):
 
         return parse_obj_as(List[models.Jwks], response.json().get("keys"))
 
-    @staticmethod
-    def as_claims(token: str) -> models.Claims:
-        """Return token as claims object."""
-        return models.Claims.parse_obj(jose.jwt.get_unverified_claims(token))
-
+    @final
     @property
     def status(self) -> Status:
         """Access authentication status."""
         return self._status
 
+    @final
     @property
     def settings(self) -> Settings:
         """Access settings."""
         return self._settings
 
+    @final
     @property
     def credentials(self) -> Optional[models.Credentials]:
         """Access credentials."""
         return self._credentials
 
+    @final
     @property
     def idp(self) -> models.Idp:
         """Access provider info."""
         return self._idp
 
+    @final
     @property
     def jwks(self) -> List[models.Jwks]:
         """Access public JWK set."""
         return self._jwks
 
+    @final
     @property
     def jwks_key(self) -> Optional[models.Jwks]:
         """Access public JWK key corresponding to credentials."""
@@ -100,21 +103,23 @@ class Flow(ABC):
         )
         return {key.kid: key for key in self.jwks}.get(unverified_header["kid"])
 
+    @final
     @property
     def id_claims(self) -> Optional[models.Claims]:
         """Id claims corresponding to credentials."""
         if self.credentials is None:
             return None
 
-        return Flow.as_claims(self.credentials.id_token)
+        return models.Claims.from_token(self.credentials.id_token)
 
+    @final
     @property
     def access_claims(self) -> Optional[models.Claims]:
         """Access claims corresponding to credentials."""
         if self.credentials is None:
             return None
 
-        return Flow.as_claims(self.credentials.access_token)
+        return models.Claims.from_token(self.credentials.access_token)
 
     @abstractmethod
     def init(self) -> None:

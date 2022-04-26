@@ -9,7 +9,7 @@ import pendulum
 from pydantic import BaseModel, Field, ValidationError
 
 from oidcish import models
-from oidcish.flow import Flow, Settings
+from oidcish.flow import AuthenticationFlow, Settings
 
 
 class DeviceSettings(Settings):
@@ -43,7 +43,7 @@ class DeviceVerification(BaseModel):
     interval: int
 
 
-class Device(Flow):
+class DeviceFlow(AuthenticationFlow):
     """Class authenticates with IDP server using device flow."""
 
     settings: DeviceSettings

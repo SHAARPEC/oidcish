@@ -1,5 +1,4 @@
 """Initialize the package."""
 
-from oidcish.device import Device
-
-# from oidcish.code import Code
+from oidcish.code import CodeFlow
+from oidcish.device import DeviceFlow

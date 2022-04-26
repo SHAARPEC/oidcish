@@ -1,4 +1,4 @@
-"""Server module."""
+"""Conection module."""
 import http.server
 import json
 import socket
@@ -6,10 +6,10 @@ from socketserver import TCPServer
 from urllib.parse import urlparse
 
 
-def port_is_used(port: int) -> bool:
-    """Check whether port is already in use."""
+def port_is_free(port: int) -> bool:
+    """Check whether port is free to access."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        return sock.connect_ex(("localhost", port)) == 0
+        return not sock.connect_ex(("localhost", port)) == 0
 
 
 class SigninRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -39,4 +39,5 @@ class SigninRequestHandler(http.server.SimpleHTTPRequestHandler):
 class ReuseAddrTCPServer(TCPServer):
     """TCP server which allows reuse of sockets."""
 
-    allow_reuse_address = True
+    allow_reuse_address: bool = True
+    timeout: float = 1.0

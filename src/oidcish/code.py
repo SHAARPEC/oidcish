@@ -1,16 +1,17 @@
 """Code flow."""
+import json
 from collections import namedtuple
-from multiprocessing import Process
-from typing import Optional
 from urllib.parse import parse_qs, urljoin, urlparse, urlsplit
 
+import background
+import httpx
 import pkce
 from bs4 import BeautifulSoup, element
 from pydantic import BaseModel, Field, ValidationError
+from strenum import StrEnum
 
-from oidcish import models
-from oidcish.flow import Flow, Settings
-from oidcish import server
+from oidcish import conn, models
+from oidcish.flow import AuthenticationFlow, Settings
 
 PkcePair = namedtuple("PkcePair", ["code_verifier", "code_challenge"])
 
@@ -25,6 +26,15 @@ class CodeSettings(Settings):
     password: str = Field(default=...)
     audience: str = Field(default=...)
     scope: str = Field(default=...)
+
+
+class CodeStatus(StrEnum):
+    """Status for device authentication flow."""
+
+    UNINITIALIZED = "UNINITIALIZED: Authentication not started."
+    PENDING = "PENDING: Authentication is pending."
+    ERROR = "ERROR: Authentication failed."
+    SUCCESS = "SUCCESS: Authentication was successful."
 
 
 class PreLoginParameters(BaseModel):
@@ -42,7 +52,7 @@ class LoginParameters(BaseModel):
     code: str
 
 
-class Code(Flow):
+class CodeFlow(AuthenticationFlow):
     """Class authenticates with IDP server using code flow.
 
     Class for authenticating with the IDP server.
@@ -81,42 +91,35 @@ class Code(Flow):
 
         Returns pre-login parameters.
         """
-        params = self.settings.dict()
-        params = {
-            setting: params[setting]
-            for setting in (
-                "client_id",
-                "client_secret",
-                "audience",
-                "scope",
-                "redirect_uri",
-            )
-            if setting in params
-        }
-
         response = self._client.get(
             self.idp.authorization_endpoint,
-            params=dict(
-                params,
-                response_type="code",
-                code_challenge_method="S256",
-                code_challenge=self.pkce_pair.code_challenge,
-            ),
+            params={
+                "client_id": self.settings.client_id,
+                "client_secret": self.settings.client_secret,
+                "audience": self.settings.audience,
+                "scope": self.settings.scope,
+                "redirect_uri": self.settings.redirect_uri,
+                "response_type": "code",
+                "code_challenge_method": "S256"
+                if "S256" in self.idp.code_challenge_methods_supported
+                else "plain",
+                "code_challenge": self.pkce_pair.code_challenge,
+            },
         )
+
+        # Follow redirects
+        while response.next_request is not None:
+            response = self._client.send(response.next_request)
 
         if self.verbose:
             print(
                 f"Pre-login: {response.request.method}: {response.request.url} "
-                f"with headers {response.request.headers} "
-                f'and content is "{response.request.content}"'
+                f"with headers {response.request.headers}."
             )
-
-        login_uri = response.request.url
 
         login_screen = BeautifulSoup(response.text, features="html.parser")
 
-        if login_screen is None:
-            raise RuntimeError("Server did not send a login screen..")
+        assert login_screen is not None, "Server did not send a login screen."
 
         if isinstance(
             errors := login_screen.find("div", {"class": "error-page"}), element.Tag
@@ -143,7 +146,7 @@ class Code(Flow):
         )
 
         return PreLoginParameters(
-            login_url=urljoin(self.idp.issuer, login_uri.path),
+            login_url=urljoin(self.idp.issuer, response.request.url.path),
             return_url=return_url,
             request_verification_token=request_verification_token,
             cookie=cookie,
@@ -156,8 +159,6 @@ class Code(Flow):
         """
         pre_login_parameters = self.__pre_login()
 
-        rvt = pre_login_parameters.request_verification_token
-
         response = self._client.post(
             pre_login_parameters.login_url,
             headers={"cookie": pre_login_parameters.cookie},
@@ -167,24 +168,25 @@ class Code(Flow):
                 "Username": self.settings.username,
                 "Password": self.settings.password,
                 "button": "login",
-                "__RequestVerificationToken": rvt,
+                "__RequestVerificationToken": pre_login_parameters.request_verification_token,
                 "RememberLogin": "false",
             },
         )
 
+        # Follow redirects
+        while response.next_request is not None:
+            response = self._client.send(response.next_request)
+
         if self.verbose:
             print(
                 f"Authentication: {response.request.method}: {response.request.url} "
-                f"with headers {response.request.headers} "
-                f'and content is "{response.request.content}"'
+                f"with headers {response.request.headers}."
             )
 
         # Get authorization code from request path
-        if not (
-            code := parse_qs(urlsplit(str(response.request.url)).query).get(
-                "code", [""]
-            )[0]
-        ):
+        try:
+            code = parse_qs(urlsplit(str(response.url)).query).get("code", [""])[0]
+        except ValueError as exc:
             port = urlparse(self.settings.redirect_uri).port or 80
             raise ValueError(
                 (
@@ -193,28 +195,27 @@ class Code(Flow):
                     "In WSL you might need to run `wsl --shutdown`"
                     "in Windows Powershell to terminate lingering processes."
                 )
-            )
+            ) from exc
+        else:
+            return LoginParameters(code=code)
 
-        return LoginParameters(code=code)
+    @background.task
+    def __start_confirmation_server(self, port: int) -> None:
+        # Create server that listens for redirection request.
+        with conn.ReuseAddrTCPServer(("", port), conn.SigninRequestHandler) as server:
+            while self.status is CodeStatus.PENDING:
+                server.handle_request()
 
     def init(self) -> None:
         """Initiate sign-in."""
+        self._status = CodeStatus.PENDING
+
         port = urlparse(self.settings.redirect_uri).port or 80
+        if conn.port_is_free(port):
+            # Start redirection server in the background.
+            self.__start_confirmation_server(port)
 
-        idle_server: Optional[server.ReuseAddrTCPServer] = None
-        idle_server_process: Optional[Process] = None
-        if no_server := not server.port_is_used(port):
-            # Setup server that listens for redirection request.
-            idle_server = server.ReuseAddrTCPServer(
-                ("", port), server.SigninRequestHandler
-            )
-            # Handle request in separate thread
-            idle_server_process = Process(
-                target=idle_server.handle_request, daemon=True
-            )
-            idle_server_process.start()
-
-        # Start login process
+        # Start login process to get authentication code.
         login_parameters = self.__login()
 
         response = self._client.post(
@@ -232,41 +233,74 @@ class Code(Flow):
         if self.verbose:
             print(
                 f"Token request: {response.request.method}: {response.request.url} "
-                f"with headers {response.request.headers} "
-                f'and content is "{response.request.content}"'
+                f"with headers {response.request.headers}."
             )
 
         # Parse credentials
         try:
+            response.raise_for_status()
             credentials = models.Credentials.parse_obj(response.json())
+        except httpx.HTTPStatusError as exc:
+            self._status = CodeStatus.ERROR
+            raise httpx.HTTPStatusError(
+                request=exc.request,
+                response=exc.response,
+                message=f"Unexpected response {response.text}.",
+            )
+        except json.JSONDecodeError as exc:
+            self._status = CodeStatus.ERROR
+            raise ValueError(
+                f"Failed to decode response {response.text} as json "
+                f"from {self.idp.token_endpoint}"
+            ) from exc
         except ValidationError as exc:
-            raise ValueError(f"{response}: {response.json()}") from exc
+            self._status = CodeStatus.ERROR
+            raise ValueError(
+                f"Failed to validate response data {response.json()} "
+                f"from {self.idp.token_endpoint}."
+            ) from exc
         else:
             self._credentials = credentials
+            self._status = CodeStatus.SUCCESS
 
-        if no_server and idle_server is not None and idle_server_process is not None:
-            # Shutdown server listening for redirection request.
-            idle_server.server_close()
-            idle_server_process.terminate()
-            idle_server_process.join()
+    def refresh(self) -> None:
+        """Refresh credentials."""
+        if self.credentials is None:
+            self._status = CodeStatus.UNINITIALIZED
+            return
+        return
 
-    # def refresh(self) -> Credentials:
-    #     """Return refreshed credentials."""
-
-    #     response = requests.post(
-    #         self._oidc.token_endpoint,
-    #         data={
-    #             "grant_type": "refresh_token",
-    #             "client_id": self._idp.client_id,
-    #             "client_secret": self._idp.client_secret,
-    #             "refresh_token": self._credentials.refresh_token,
-    #         },
+    #     data = dict(
+    #         self.settings.dict(),
+    #         grant_type="refresh_token",
+    #         refresh_token=self.credentials.refresh_token,
     #     )
+    #     data.pop("host")
 
-    #     # Parse credentials
+    #     response = self._client.post(self.idp.token_endpoint, data=data)
+
     #     try:
-    #         credentials = Credentials.parse_obj(response.json())
+    #         response.raise_for_status()
+    #         credentials = models.Credentials.parse_obj(response.json())
+    #     except httpx.HTTPStatusError as exc:
+    #         self._status = DeviceStatus.ERROR
+    #         raise httpx.HTTPStatusError(
+    #             request=exc.request,
+    #             response=exc.response,
+    #             message=f"Unexpected response {response.text}.",
+    #         )
+    #     except json.JSONDecodeError as exc:
+    #         self._status = DeviceStatus.ERROR
+    #         raise ValueError(
+    #             f"Failed to decode response {response.text} as json "
+    #             f"from {self.idp.token_endpoint}"
+    #         ) from exc
     #     except ValidationError as exc:
-    #         raise ValueError(f"{response}: {response.json()}") from exc
-
-    #     return credentials
+    #         self._status = DeviceStatus.ERROR
+    #         raise ValueError(
+    #             f"Failed to validate refresh data {response.json()} "
+    #             f"from {self.idp.token_endpoint}."
+    #         ) from exc
+    #     else:
+    #         self._credentials = credentials
+    #         self._status = DeviceStatus.SUCCESS

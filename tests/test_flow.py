@@ -3,12 +3,12 @@ import pytest
 import pytest_check as check
 import respx
 
-from oidcish.flow import Flow, Settings
+from oidcish.flow import AuthenticationFlow, Settings
 
 from . import common
 
 
-class MockFlow(Flow):
+class MockFlow(AuthenticationFlow):
     """Mock class for testing abstract Flow class."""
 
     def __init__(self, host: str, **kwargs) -> None:

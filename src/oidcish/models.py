@@ -1,6 +1,9 @@
 """Models."""
+from __future__ import annotations
 from typing import List, Optional, Union
 
+import jose
+import jose.jwt
 from pydantic import BaseModel, Field
 
 
@@ -60,6 +63,11 @@ class Claims(BaseModel):
     role: Union[str, List[str], None] = Field(...)
     scope: Union[str, List[str]] = Field(...)
     amr: List[str]
+
+    @staticmethod
+    def from_token(token: str) -> Claims:
+        """Convert token to claims object."""
+        return Claims.parse_obj(jose.jwt.get_unverified_claims(token))
 
 
 class Jwks(BaseModel):
