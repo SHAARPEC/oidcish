@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "oidcish"
 version = "0.1.1"
-description = ""
+description = "Obtain authentication tokens from OIDC providers."
 authors = ["Erik G. Brandt <erik.brandt@shaarpec.com>"]
 readme = "README.md"
 packages = [{include = "oidcish", from = "src"}]
