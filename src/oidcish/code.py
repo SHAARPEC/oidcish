@@ -53,24 +53,49 @@ class LoginParameters(BaseModel):
 
 
 class CodeFlow(AuthenticationFlow):
-    """Class authenticates with IDP server using code flow.
+    """Authenticate with IDP server using code flow.
 
-    Class for authenticating with the IDP server.
+    The client on the IDP server must support code flow. Authentication arguments can be
+    provided as keywords or omitted and read from a .env file in the working directory.
+    The environment variables are prefixed with OIDCISH, so OIDCISH_CLIENT_ID etc.
     \f
     Parameters
     ----------
-    host : str
-           Address to OIDC server, e.g. https://idp.someprovider.com
-    **kwargs: dict, optional
-           Dict with settings for the IDP server.
+      host : str
+        The IDP host name.
+      **kwargs : Authentication details and other arguments.
+
+        Valid authentication arguments are:
+          client_id: str, The client ID.
+          client_secret: str, The client secret.
+          redirect_uri: str, Must exactly match one of the allowed redirect URIs for the client.
+                             (Default = http://localhost)
+          username: str = The user name.
+          password: str = The user password.
+          scope: str, A space separated, case-sensitive list of scopes.
+                      (Default = openid profile offline_access)
+          audience: str = The access claim was designated for this audience.
+
+        Valid other arguments are:
+          verbose: boolean, Print more information during the login procedure. (Default = False)
 
     Examples
     --------
-    >>> from oidcish import Code
-    >>> auth = Code(host="https://idp.example.com")
+    >>> from oidcish.code import CodeFlow
+    >>> auth = DeviceFlow(
+            host="https://idp.example.com",
+            client_id=...,
+            client_secret=...,
+            redirect_uri=...,
+            username=...,
+            password=...,
+            scope=...,
+            audience=...,
+        )
+    # Or, read auth variables from .env in working dir
+    >>> auth = CodeFlow(host="https://idp.example.com")
     >>> auth.credentials.access_token
     eyJhbGciOiJSU...
-
     """
 
     settings: CodeSettings

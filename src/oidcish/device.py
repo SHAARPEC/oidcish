@@ -44,7 +44,44 @@ class DeviceVerification(BaseModel):
 
 
 class DeviceFlow(AuthenticationFlow):
-    """Class authenticates with IDP server using device flow."""
+    """Authenticate with IDP server using device flow.
+
+    The client on the IDP server must support device flow. Authentication arguments can be
+    provided as keywords or omitted and read from a .env file in the working directory.
+    The environment variables are prefixed with OIDCISH, so OIDCISH_CLIENT_ID etc.
+    \f
+    Parameters
+    ----------
+      host : str
+        The IDP host name.
+      **kwargs : Authentication details and other arguments.
+
+        Valid authentication arguments are:
+          client_id: str, The client ID.
+          client_secret: str, The client secret.
+          scope: str, A space separated, case-sensitive list of scopes.
+                      (Default = openid profile offline_access)
+          audience: str = The access claim was designated for this audience.
+
+        Valid other arguments are:
+          poll_rate: float, How often to check for sign in completion in seconds (Default = 1.0).
+
+    Examples
+    --------
+    >>> from oidcish.device import DeviceFlow
+    >>> auth = DeviceFlow(
+            host="https://idp.example.com",
+            client_id=...,
+            client_secret=...,
+            scope=...,
+            audience=...,
+        )
+    # Or, read auth variables from .env in working dir
+    >>> auth = DeviceFlow(host="https://idp.example.com")
+    >>> auth.credentials.access_token
+    eyJhbGciOiJSU...
+
+    """
 
     settings: DeviceSettings
 
