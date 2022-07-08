@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oidcish"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Erik G. Brandt <erik.brandt@shaarpec.com>"]
 readme = "README.md"
