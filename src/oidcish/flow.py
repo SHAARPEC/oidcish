@@ -1,6 +1,7 @@
 """Definition of authentication flows."""
 import os
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import List, Optional, final
 
 import httpx
@@ -11,6 +12,10 @@ from strenum import StrEnum
 
 from oidcish import models
 
+class Flows(Enum):
+    """Supported authentication flows."""
+    DEVICE = auto()
+    CODE = auto()
 
 class Status(StrEnum):
     """Base enum for general authentication flow."""
