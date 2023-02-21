@@ -85,10 +85,10 @@ class DeviceFlow(AuthenticationFlow):
 
     settings: DeviceSettings
 
-    def __init__(self, host: str, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         poll_rate = kwargs.pop("poll_rate", 1.0)
 
-        super().__init__(DeviceSettings(host=host, **kwargs))
+        super().__init__(DeviceSettings(**kwargs))
 
         # Initiate sign-in procedure
         self.init(poll_rate=poll_rate)

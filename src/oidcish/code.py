@@ -100,10 +100,10 @@ class CodeFlow(AuthenticationFlow):
 
     settings: CodeSettings
 
-    def __init__(self, host: str, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         verbose = kwargs.pop("verbose", False)
 
-        super().__init__(CodeSettings(host=host, **kwargs))
+        super().__init__(CodeSettings(**kwargs))
 
         self.pkce_pair = PkcePair(*pkce.generate_pkce_pair())
         self.verbose = verbose

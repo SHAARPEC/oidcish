@@ -26,7 +26,7 @@ class Status(StrEnum):
 class Settings(BaseSettings):
     """Settings for general authentication flow."""
 
-    host: str = Field(default=...)
+    host: str = Field(default=None)
     timeout: float = Field(default=3.0)
 
     # pylint: disable=too-few-public-methods
