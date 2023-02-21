@@ -14,10 +14,18 @@ Library to connect to your OIDC provider via:
 
 ```python
 >>> from oidcish import DeviceFlow, CodeFlow
->>> auth = DeviceFlow(host="https://example.idp.com")
+>>> auth = DeviceFlow(
+...     host="https://idp.example.com",
+...     client_id=...,
+...     client_secret=...,
+...     scope=...,
+...     audience=...
+...)
 Visit https://idp.example.com/device?userCode=594658190 to complete sign-in.
-# Or
-# auth = CodeFlow(host="https://example.idp.com")
+# Or use env file for auth
+# auth = DeviceFlow(_env_file="path/to/my/env.file")
+# Or use authorization code flow
+# auth = CodeFlow(_env_file="path/to/my/env.file")
 >>> print(auth.credentials.access_token)
 eyJhbGciOiJSU...
 ```
@@ -26,21 +34,25 @@ eyJhbGciOiJSU...
 
 Device flow can be used with the following options:
 
-| Option | Default | Description |
-|-|-|-|
-| client_id | *No default* | The client id. |
-| client_secret | *No default* | The client secret. |
-| scope | openid profile offline_access | A space separated, case-sensitive list of scopes. |
-| audience | *No default* | The access claim was designated for this audience. |
+| Option | Environment variable | Default | Description |
+|-|-|-|-|
+| client_id | OIDCISH_CLIENT_ID | *No default* | The client id. |
+| client_secret | OIDCISH_CLIENT_SECRET | *No default* | The client secret. |
+| scope | OIDCISH_SCOPE | openid profile offline_access | A space separated, case-sensitive list of scopes. |
+| audience | OIDCISH_AUDIENCE | *No default* | The access claim was designated for this audience. |
+
+The OIDCISH_ prefix can be set with the OIDCISH_ENV_PREFIX environment variable.
 
 Code flow can be used with the following options:
 
-| Option | Default | Description |
-|-|-|-|
-| client_id | *No default* | The client id. |
-| client_secret | *No default* | The client secret. |
-| redirect_uri | http://localhost | Must exactly match one of the allowed redirect URIs for the client. |
-| username | *No default* | The user name. |
-| password | *No default* | The user password. |
-| scope | openid profile offline_access | A space separated, case-sensitive list of scopes. |
-| audience | *No default* | The access claim was designated for this audience. |
+| Option | Environment variable | Default | Description |
+|-|-|-|-|
+| client_id | OIDCISH_CLIENT_ID | *No default* | The client id. |
+| client_secret | OIDCISH_CLIENT_SECRET | *No default* | The client secret. |
+| redirect_uri | OIDCISH_REDIRECT_URI | http://localhost | Must exactly match one of the allowed redirect URIs for the client. |
+| username | OIDCISH_USERNAME | *No default* | The user name. |
+| password | OIDCISH_PASSWORD | *No default* | The user password. |
+| scope | OIDCISH_SCOPE | openid profile offline_access | A space separated, case-sensitive list of scopes. |
+| audience | OIDCISH_AUDIENCE | *No default* | The access claim was designated for this audience. |
+
+The OIDCISH_ prefix can be set with the OIDCISH_ENV_PREFIX environment variable.
