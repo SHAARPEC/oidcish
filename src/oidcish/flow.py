@@ -12,10 +12,13 @@ from strenum import StrEnum
 
 from oidcish import models
 
+
 class Flows(Enum):
     """Supported authentication flows."""
+
     DEVICE = auto()
     CODE = auto()
+
 
 class Status(StrEnum):
     """Base enum for general authentication flow."""

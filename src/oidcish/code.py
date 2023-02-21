@@ -53,28 +53,30 @@ class LoginParameters(BaseModel):
 
 
 class CodeFlow(AuthenticationFlow):
-    """Authenticate with IDP server using code flow.
+    """Authenticate with IDP host using code flow.
 
-    The client on the IDP server must support code flow. Authentication arguments can be
-    provided as keywords or omitted and read from a .env file in the working directory.
-    The environment variables are prefixed with OIDCISH, so OIDCISH_CLIENT_ID etc.
+    The client on the IDP host must support device flow. Authentication arguments
+    can be provided as keywords, environment variables, or in a file whose path is
+    given with the special `_env_file` argument. The variables in this file are
+    prefixed with the value given by the OIDCISH_ENV_PREFIX environment variable
+    (default: OIDCISH_).
     \f
     Parameters
     ----------
-      host : str
-        The IDP host name.
       **kwargs : Authentication details and other arguments.
 
         Valid authentication arguments are:
-          client_id: str, The client ID.
-          client_secret: str, The client secret.
-          redirect_uri: str, Must exactly match one of the allowed redirect URIs for the client.
-                             (Default = http://localhost)
-          username: str = The user name.
-          password: str = The user password.
-          scope: str, A space separated, case-sensitive list of scopes.
-                      (Default = openid profile offline_access)
-          audience: str = The access claim was designated for this audience.
+          host: str, The IDP host name (OIDCISH_HOST).
+          client_id: str, The client ID (OIDCISH_CLIENT_ID).
+          client_secret: str, The client secret (OIDCISH_CLIENT_SECRET).
+          redirect_uri: str, Must exactly match one of the allowed redirect URIs for the client
+            (OIDCISH_CLIENT_ID, default: http://localhost).
+          username: str = The user name (OIDCISH_USERNAME).
+          password: str = The user password (OIDCISH_PASSWORD).
+          scope: str, A space separated, case-sensitive list of scopes
+            (OIDCISH_SCOPE, default: openid profile offline_access).
+          audience: str = The access claim was designated for this audience
+            (OIDCISH_AUDIENCE).
 
         Valid other arguments are:
           verbose: boolean, Print more information during the login procedure. (Default = False)
@@ -92,10 +94,11 @@ class CodeFlow(AuthenticationFlow):
             scope=...,
             audience=...,
         )
-    # Or, read auth variables from .env in working dir
-    >>> auth = CodeFlow(host="https://idp.example.com")
+    # Or, read auth variables from my_env_file in working dir
+    >>> auth = CodeFlow(_env_file="./my_env_file")
     >>> auth.credentials.access_token
     eyJhbGciOiJSU...
+
     """
 
     settings: CodeSettings

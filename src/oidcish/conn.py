@@ -1,4 +1,4 @@
-"""Conection module."""
+"""Connection module."""
 import http.server
 import json
 import socket

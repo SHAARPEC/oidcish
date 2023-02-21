@@ -44,27 +44,30 @@ class DeviceVerification(BaseModel):
 
 
 class DeviceFlow(AuthenticationFlow):
-    """Authenticate with IDP server using device flow.
+    """Authenticate with IDP host using device flow.
 
-    The client on the IDP server must support device flow. Authentication arguments can be
-    provided as keywords or omitted and read from a .env file in the working directory.
-    The environment variables are prefixed with OIDCISH, so OIDCISH_CLIENT_ID etc.
+    The client on the IDP host must support device flow. Authentication arguments
+    can be provided as keywords, environment variables, or in a file whose path is
+    given with the special `_env_file` argument. The variables in this file are
+    prefixed with the value given by the OIDCISH_ENV_PREFIX environment variable
+    (default: OIDCISH_).
     \f
     Parameters
     ----------
-      host : str
-        The IDP host name.
       **kwargs : Authentication details and other arguments.
 
         Valid authentication arguments are:
-          client_id: str, The client ID.
-          client_secret: str, The client secret.
+          host: str, The IDP host name (OIDCISH_HOST).
+          client_id: str, The client ID (OIDCISH_CLIENT_ID).
+          client_secret: str, The client secret (OIDCISH_CLIENT_SECRET).
           scope: str, A space separated, case-sensitive list of scopes.
-                      (Default = openid profile offline_access)
-          audience: str = The access claim was designated for this audience.
+            (OIDCISH_SCOPE, default: openid profile offline_access).
+          audience: str = The access claim was designated for this audience
+            (OIDCISH_AUDIENCE).
 
         Valid other arguments are:
-          poll_rate: float, How often to check for sign in completion in seconds (Default = 1.0).
+          poll_rate: float, How often to check for sign in completion in seconds.
+            (default: 1.0)
 
     Examples
     --------
@@ -76,8 +79,8 @@ class DeviceFlow(AuthenticationFlow):
             scope=...,
             audience=...,
         )
-    # Or, read auth variables from .env in working dir
-    >>> auth = DeviceFlow(host="https://idp.example.com")
+    # Or, read auth variables from my_env_file in working dir
+    >>> auth = DeviceFlow(_env_file="./my_env_file")
     >>> auth.credentials.access_token
     eyJhbGciOiJSU...
 
