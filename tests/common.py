@@ -11,6 +11,7 @@ from oidcish.crypt import Codec
 class FlowTestEnv(BaseModel):
     """Test setting environment variables."""
 
+    OIDCISH_HOST: str
     OIDCISH_CLIENT_ID: str
     OIDCISH_CLIENT_SECRET: str
     OIDCISH_SCOPE: str
@@ -22,6 +23,7 @@ class MockFlowData(BaseModel):
 
     env: FlowTestEnv = FlowTestEnv.parse_obj(
         {
+            "OIDCISH_HOST": "https://example.idp.com",
             "OIDCISH_CLIENT_ID": "test_client_id",
             "OIDCISH_CLIENT_SECRET": "test_client_secret",
             "OIDCISH_SCOPE": "test_scope1 test_scope2",

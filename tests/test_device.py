@@ -57,7 +57,7 @@ class TestConnectionErrors:
         ).side_effect = httpx.ConnectTimeout
 
         with pytest.raises(httpx.ConnectTimeout):
-            auth = DeviceFlow(self.data.idp.issuer, timeout=3)
+            auth = DeviceFlow(host=self.data.idp.issuer, timeout=3)
             check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.respx(base_url=data.idp.issuer)
@@ -68,7 +68,7 @@ class TestConnectionErrors:
         respx_mock.get(".well-known/openid-configuration").respond(status_code=404)
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = DeviceFlow(self.data.idp.issuer)
+            auth = DeviceFlow(host=self.data.idp.issuer)
             check.equal(auth.status, DeviceStatus.ERROR)
 
     def test_status_error_when_no_device_authorization_endpoint(
@@ -86,7 +86,7 @@ class TestConnectionErrors:
         )
 
         with pytest.raises(httpx.HTTPStatusError):
-            auth = DeviceFlow(self.data.idp.issuer)
+            auth = DeviceFlow(host=self.data.idp.issuer)
             check.equal(auth.status, DeviceStatus.ERROR)
 
 
@@ -137,7 +137,7 @@ class TestParsingErrors:
         )
 
         with pytest.raises(ValueError):
-            auth = DeviceFlow(self.data.idp.issuer)
+            auth = DeviceFlow(host=self.data.idp.issuer)
             check.equal(auth.status, DeviceStatus.ERROR)
 
     @pytest.mark.usefixtures("mock_idp")
@@ -149,7 +149,7 @@ class TestParsingErrors:
             400, json={"error": "authorization_pending"}
         )
 
-        auth = DeviceFlow(self.data.idp.issuer)
+        auth = DeviceFlow(host=self.data.idp.issuer)
         # Wait 10% extra so that confirmation expires
         time.sleep(self.device.expires_in * 1.1)
         check.equal(auth.status, DeviceStatus.NO_CONFIRMATION)
