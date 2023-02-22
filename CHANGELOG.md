@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.4] - 2023-02-22
+## [0.2.0] - 2023-02-22
 
 ### Added
 - Add authorization code flow (no refresh).
