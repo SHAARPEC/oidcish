@@ -12,7 +12,7 @@ import pytest
 import pytest_check as check
 import respx
 
-from oidcish.device import DeviceFlow, DeviceStatus, DeviceVerification
+from oidcish.flows.device import DeviceFlow, DeviceStatus, DeviceVerification
 
 from . import common
 

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, ValidationError
 from strenum import StrEnum
 
 from oidcish import conn, models
-from oidcish.flow import AuthenticationFlow, Settings
+from oidcish.flows.base import AuthenticationFlow, Settings
 
 PkcePair = namedtuple("PkcePair", ["code_verifier", "code_challenge"])
 

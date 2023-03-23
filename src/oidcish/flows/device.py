@@ -9,7 +9,7 @@ import pendulum
 from pydantic import BaseModel, Field, ValidationError
 
 from oidcish import models
-from oidcish.flow import AuthenticationFlow, Settings
+from oidcish.flows.base import AuthenticationFlow, Settings
 
 
 class DeviceSettings(Settings):
