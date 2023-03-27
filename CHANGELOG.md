@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2023-03-27
+
+### Added
+- Support for client credentials flow.
+
 ## [0.2.0] - 2023-02-22
 
 ### Added
