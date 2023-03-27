@@ -1,24 +1,16 @@
-"""Device code flow tests."""
-# import secrets
-import time
-
-# from typing import List, Dict, Union, Any
-# from uuid import uuid4
-
+"""Client credentials flow tests."""
 import httpx
-
-# import pendulum
 import pytest
 import pytest_check as check
 import respx
 
-from oidcish.flows.device import DeviceFlow, DeviceStatus, DeviceVerification
+from oidcish.flows.credentials import CredentialsFlow, CredentialsStatus
 
 from . import common
 
 
-class TestFoo:
-    """Test suite for foo."""
+class TestGeneralCredentialsFlow:
+    """Test suite for client credentials flow."""
 
     codec = common.mock_codec()
     data = common.MockFlowData()
@@ -33,8 +25,27 @@ class TestFoo:
 
         return respx_mock
 
-    @pytest.mark.respx(base_url=data.idp.issuer)
-    def test_foo(self) -> None:
-        """Test foo."""
+    @pytest.fixture()
+    def mock_idp(self, respx_mock: respx.MockRouter) -> respx.MockRouter:
+        """Mock identity provider."""
+        respx_mock.get(
+            f"{self.data.idp.issuer}/.well-known/openid-configuration"
+        ).respond(status_code=200, json=self.data.idp.dict())
 
-        assert True
+        respx_mock.get(self.data.idp.jwks_uri).respond(
+            status_code=200, json={"keys": [self.codec.key.public_dict]}
+        )
+
+    @pytest.mark.usefixtures("mock_idp")
+    def test_invalid_client_error_is_caught(self, respx_mock: respx.MockRouter) -> None:
+        """Test that invalid client id gives invalid_client error."""
+        respx_mock.post("connect/token").return_value = httpx.Response(
+            400, json={"error": "invalid_client"}
+        )
+
+        with pytest.raises(httpx.HTTPStatusError) as exc:
+            auth = CredentialsFlow(host=self.data.idp.issuer)
+            check.equal(auth.status, CredentialsStatus.ERROR)
+            check.equal(exc.response.status_code, 400)
+            check.is_in("error", exc.response.json())
+            check.equal(exc.response.json().get("error"), "invalid_client")
