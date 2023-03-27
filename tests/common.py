@@ -82,25 +82,6 @@ class MockFlowData(BaseModel):
         }
     )
 
-    claims: models.Claims = models.Claims.parse_obj(
-        {
-            "nbf": pendulum.now().int_timestamp,
-            "exp": pendulum.now().add(seconds=60).int_timestamp,
-            "iss": idp.issuer,
-            "aud": idp.issuer,
-            "idp": "local",
-            "client_id": env.OIDCISH_CLIENT_ID,
-            "sub": "foo",
-            "auth_time": pendulum.now().subtract(seconds=10).int_timestamp,
-            "role": "databases.default",
-            "jti": str(uuid4()),
-            "sid": str(uuid4()),
-            "iat": pendulum.now().int_timestamp,
-            "scope": env.OIDCISH_SCOPE,
-            "amr": ["pwd"],
-        }
-    )
-
 
 def mock_codec(kid: str = "12345") -> Codec:
     """Mock a codec."""
