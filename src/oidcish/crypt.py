@@ -109,6 +109,11 @@ class Codec:
         """Decode the claims in the token."""
         return jose.jwt.decode(token, key=self._key.public_dict)
 
+    @staticmethod
+    def get_unverified_claims(token: str) -> Mapping[Any, Any]:
+        """Get unverified claims in the token."""
+        return jose.jwt.get_unverified_claims(token)
+
     @property
     def key(self):
         """Access RSA key."""
