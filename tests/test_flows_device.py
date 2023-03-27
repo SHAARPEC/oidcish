@@ -1,13 +1,7 @@
 """Device code flow tests."""
-# import secrets
 import time
 
-# from typing import List, Dict, Union, Any
-# from uuid import uuid4
-
 import httpx
-
-# import pendulum
 import pytest
 import pytest_check as check
 import respx
@@ -90,8 +84,8 @@ class TestConnectionErrors:
             check.equal(auth.status, DeviceStatus.ERROR)
 
 
-class TestParsingErrors:
-    """Test suite for parsing errors."""
+class TestDeviceParsingErrors:
+    """Test suite for device flow parsing errors."""
 
     codec = common.mock_codec()
     data = common.MockFlowData()
@@ -101,7 +95,7 @@ class TestParsingErrors:
     def mock_env(
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
-        """Mock identity provider."""
+        """Mock environment."""
         for (var, value) in self.data.env:
             monkeypatch.setenv(var, value)
 
