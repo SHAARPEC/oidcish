@@ -39,9 +39,9 @@ class Idp(BaseModel):
 class Credentials(BaseModel):
     """Credentials from IDP server."""
 
-    id_token: str
+    id_token: Optional[str]
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str]
     expires_in: int
     token_type: str
     scope: str

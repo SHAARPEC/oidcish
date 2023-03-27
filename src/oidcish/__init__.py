@@ -2,5 +2,6 @@
 
 Device and code flows are supported.
 """
-from oidcish.device import DeviceFlow
-from oidcish.code import CodeFlow
+from oidcish.flows.device import DeviceFlow
+from oidcish.flows.code import CodeFlow
+from oidcish.flows.credentials import CredentialsFlow

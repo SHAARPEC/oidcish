@@ -3,7 +3,7 @@ import pytest
 import pytest_check as check
 import respx
 
-from oidcish.flow import AuthenticationFlow, Settings
+from oidcish.flows.base import AuthenticationFlow, Settings
 
 from . import common
 
