@@ -63,7 +63,7 @@ class CredentialsFlow(AuthenticationFlow):
             audience=...,
         )
     # Or, read auth variables from my_env_file in working dir
-    >>> auth = DeviceFlow(_env_file="./my_env_file")
+    >>> auth = CredentialsFlow(_env_file="./my_env_file")
     >>> auth.credentials.access_token
     eyJhbGciOiJSU...
 
@@ -116,7 +116,7 @@ class CredentialsFlow(AuthenticationFlow):
             raise json.JSONDecodeError(
                 msg=(
                     "Failed to validate client credentials data "
-                    f"from {self.idp.device_authorization_endpoint}."
+                    f"from {self.idp.token_endpoint}."
                 ),
                 doc=response.text,
                 pos=exc.pos,
@@ -124,8 +124,8 @@ class CredentialsFlow(AuthenticationFlow):
         except ValidationError as exc:
             self._status = CredentialsStatus.ERROR
             raise ValueError(
-                f"Failed to validate device code data {response.json()} "
-                f"from {self.idp.device_authorization_endpoint}."
+                f"Failed to validate client credentials data {response.json()} "
+                f"from {self.idp.token_endpoint}."
             ) from exc
         else:
             assert response.status_code == 200
