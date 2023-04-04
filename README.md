@@ -9,6 +9,7 @@ Library to connect to your OIDC provider via:
 
 - Authentication code flow
 - Device code flow
+- Client credentials flow
 
 ## Usage
 
