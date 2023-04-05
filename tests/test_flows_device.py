@@ -42,6 +42,7 @@ class TestConnectionErrors:
 
         return respx_mock
 
+    @pytest.mark.unit
     @pytest.mark.respx(base_url=data.idp.issuer)
     def test_error_on_timeout(self, respx_mock: respx.MockRouter) -> None:
         """Test that unknown host raises a connect error."""
@@ -54,6 +55,7 @@ class TestConnectionErrors:
             auth = DeviceFlow(host=self.data.idp.issuer, timeout=3)
             check.equal(auth.status, DeviceStatus.ERROR)
 
+    @pytest.mark.unit
     @pytest.mark.respx(base_url=data.idp.issuer)
     def test_status_error_when_no_provider_info(
         self, respx_mock: respx.MockRouter
@@ -65,6 +67,7 @@ class TestConnectionErrors:
             auth = DeviceFlow(host=self.data.idp.issuer)
             check.equal(auth.status, DeviceStatus.ERROR)
 
+    @pytest.mark.unit
     def test_status_error_when_no_device_authorization_endpoint(
         self, respx_mock: respx.MockRouter
     ) -> None:
@@ -116,6 +119,7 @@ class TestDeviceParsingErrors:
 
         return respx_mock
 
+    @pytest.mark.unit
     def test_validation_error_when_no_json_from_device_authorization_endpoint(
         self, respx_mock: respx.MockRouter
     ) -> None:
@@ -134,6 +138,7 @@ class TestDeviceParsingErrors:
             auth = DeviceFlow(host=self.data.idp.issuer)
             check.equal(auth.status, DeviceStatus.ERROR)
 
+    @pytest.mark.unit
     @pytest.mark.usefixtures("mock_idp")
     def test_device_authorization_times_out_without_confirmation(
         self, respx_mock: respx.MockRouter

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1] - 2023-04-05
+
+### Added
+- Add integration test setup with docker-compose using OIDC mock server.
+- Add integration test for client credentials refresh.
+
+### Fixed
+- Warn when client credentials can not be parsed.
+- Make `amr` and `auth_time` claims optional.
+
 ## [0.3.0] - 2023-03-27
 
 ### Added

@@ -1,15 +1,12 @@
 """Client credentials flow tests."""
 import time
-from uuid import uuid4
 
 import httpx
-import pendulum
 import pytest
 import pytest_check as check
 import respx
 
 from oidcish.flows.credentials import CredentialsFlow, CredentialsStatus
-from oidcish import models
 
 from . import common
 
@@ -20,42 +17,8 @@ class TestGeneralCredentialsFlow:
     codec = common.mock_codec()
     data = common.MockFlowData()
 
-    def mock_credentials(
-        self,
-        to_expiry: int = 60,
-        since_auth: int = 0,
-    ) -> models.Credentials:
-
-        claims = models.Claims.parse_obj(
-            {
-                "nbf": pendulum.now().int_timestamp,
-                "exp": pendulum.now().add(seconds=to_expiry).int_timestamp,
-                "iss": self.data.idp.issuer,
-                "aud": self.data.idp.issuer,
-                "idp": "local",
-                "client_id": self.data.env.OIDCISH_CLIENT_ID,
-                "sub": "foo",
-                "auth_time": pendulum.now().subtract(seconds=since_auth).int_timestamp,
-                "role": "databases.default",
-                "jti": str(uuid4()),
-                "sid": str(uuid4()),
-                "iat": pendulum.now().int_timestamp,
-                "scope": self.data.env.OIDCISH_SCOPE,
-                "amr": ["pwd"],
-            }
-        )
-
-        return models.Credentials.parse_obj(
-            {
-                "access_token": self.codec.encode(claims.dict()),
-                "expires_in": to_expiry,
-                "token_type": "Bearer",
-                "scope": self.data.env.OIDCISH_SCOPE,
-            }
-        )
-
-    @pytest.fixture(autouse=True)
-    def mock_env(
+    @pytest.fixture()
+    def mock_env_basic(
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
         """Mock identity provider."""
@@ -63,6 +26,25 @@ class TestGeneralCredentialsFlow:
             monkeypatch.setenv(var, value)
 
         return respx_mock
+
+    @pytest.fixture(name="auth_credentials")
+    def mock_client_credentials(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> CredentialsFlow:
+        """Mock identity provider."""
+        for (var, value) in {
+            "OIDCISH_HOST": "http://oidc_server_mock",
+            "OIDCISH_CLIENT_ID": "mock-client-credentials",
+            "OIDCISH_CLIENT_SECRET": "mock-client-credentials-secret",
+            "OIDCISH_AUDIENCE": "mock-client-credentials-audience",
+        }.items():
+            monkeypatch.setenv(var, value)
+
+        auth = CredentialsFlow()
+
+        yield auth
+
+        auth._status = CredentialsStatus.ERROR
 
     @pytest.fixture()
     def mock_idp(self, respx_mock: respx.MockRouter) -> respx.MockRouter:
@@ -75,7 +57,8 @@ class TestGeneralCredentialsFlow:
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
 
-    @pytest.mark.usefixtures("mock_idp")
+    @pytest.mark.unit
+    @pytest.mark.usefixtures("mock_env_basic", "mock_idp")
     def test_invalid_client_error_is_caught(self, respx_mock: respx.MockRouter) -> None:
         """Test that invalid client id gives invalid_client error."""
         respx_mock.post("connect/token").return_value = httpx.Response(
@@ -88,3 +71,18 @@ class TestGeneralCredentialsFlow:
             check.equal(exc.response.status_code, 400)
             check.is_in("error", exc.response.json())
             check.equal(exc.response.json().get("error"), "invalid_client")
+
+    @pytest.mark.integration
+    def test_client_credentials_are_refreshed(
+        self, auth_credentials: CredentialsFlow
+    ) -> None:
+        expires_in = auth_credentials.credentials.expires_in
+        original = auth_credentials.access_claims.exp
+        refreshed = auth_credentials.access_claims.exp
+
+        start = time.time()
+        while (refreshed == original) or ((time.time() - start) > (2 * expires_in)):
+            refreshed = auth_credentials.access_claims.exp
+            time.sleep(0.1)
+
+        check.greater(refreshed, original)
