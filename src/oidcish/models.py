@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 import jose
 import jose.jwt
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Idp(BaseModel):
@@ -65,9 +65,15 @@ class Claims(BaseModel):
     amr: List[str]
 
     @staticmethod
-    def from_token(token: str) -> Claims:
+    def from_token(token: str) -> Optional[Claims]:
         """Convert token to claims object."""
-        return Claims.parse_obj(jose.jwt.get_unverified_claims(token))
+        try:
+            claims = Claims.parse_obj(jose.jwt.get_unverified_claims(token))
+        except ValidationError as exc:
+            print(f"Warning: Failed to parse claims:\n{exc}")
+            claims = None
+        finally:
+            return claims
 
 
 class Jwks(BaseModel):
