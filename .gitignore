@@ -1,3 +1,4 @@
 dist/*
 notebooks*
 **/__pycache__
+**/*.ipynb
