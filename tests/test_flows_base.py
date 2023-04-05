@@ -46,6 +46,7 @@ class TestGeneralFlow:
 
         return respx_mock
 
+    @pytest.mark.unit
     @pytest.mark.usefixtures("mock_idp")
     def test_get_info_is_successful(self) -> None:
         """Test that provider info is parsed."""

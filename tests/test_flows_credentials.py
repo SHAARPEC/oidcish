@@ -75,7 +75,8 @@ class TestGeneralCredentialsFlow:
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
 
-    @pytest.mark.usefixtures("mock_idp")
+    @pytest.mark.unit
+    @pytest.mark.usefixtures("mock_env_basic", "mock_idp")
     def test_invalid_client_error_is_caught(self, respx_mock: respx.MockRouter) -> None:
         """Test that invalid client id gives invalid_client error."""
         respx_mock.post("connect/token").return_value = httpx.Response(
