@@ -82,9 +82,12 @@ class CredentialsFlow(AuthenticationFlow):
     @background.task
     def __auto_refresh(self, poll_rate: float = 1.0) -> None:
         while self.status not in {CredentialsStatus.ERROR}:
-            if (self.access_claims is not None) and (
-                pendulum.now(tz="UTC").int_timestamp > self.access_claims.exp
-            ):
+            if self.access_claims is None:
+                print(
+                    "Failed to refresh credentials because there were no access claims."
+                )
+                break
+            if pendulum.now(tz="UTC").int_timestamp > self.access_claims.exp:
                 self.refresh()
             time.sleep(poll_rate)
 
