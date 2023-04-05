@@ -1,0 +1,99 @@
+version: '3'
+services:
+    oidcish:
+        container_name: jl-work-env-oidcish
+        image: jl-work-env
+        ports:
+            - '8888:8888'
+        volumes:
+            - $HOME/Work/base/.local:/home/mambauser/.local
+            - $PWD:/home/mambauser/work
+        working_dir: /home/mambauser/work
+        command:
+            [
+                'jupyter',
+                'lab',
+                '--ip',
+                '0.0.0.0',
+                '--no-browser',
+                '--LabApp.token',
+                '',
+                '--ServerApp.iopub_data_rate_limit',
+                '1.0e10',
+            ]
+        environment:
+            COMPOSE_PROJECT_NAME: oidcish
+    oidc_server_mock:
+        container_name: oidc-server-mock
+        image: ghcr.io/soluto/oidc-server-mock:latest
+        ports:
+            - '30050:80'
+        environment:
+            COMPOSE_PROJECT_NAME: oidcish
+            ASPNETCORE_ENVIRONMENT: Development
+            SERVER_OPTIONS_INLINE: |
+                {
+                  "AccessTokenJwtType": "JWT",
+                  "Discovery": {
+                    "ShowKeySet": true
+                  },
+                  "Authentication": {
+                    "CookieSameSiteMode": "Lax",
+                    "CheckSessionCookieSameSiteMode": "Lax"
+                  }
+                }
+            LOGIN_OPTIONS_INLINE: |
+                {
+                  "AllowRememberLogin": false
+                }
+            LOGOUT_OPTIONS_INLINE: |
+                {
+                  "AutomaticRedirectAfterSignOut": true
+                }
+            API_SCOPES_INLINE: |
+                - Name: some-app-scope-1
+                - Name: some-app-scope-2
+            API_RESOURCES_INLINE: |
+                - Name: some-app
+                  Scopes:
+                    - some-app-scope-1
+                    - some-app-scope-2
+            USERS_CONFIGURATION_INLINE: |
+                [
+                  {
+                    "SubjectId":"1",
+                    "Username":"User1",
+                    "Password":"pwd",
+                    "Claims": [
+                      {
+                        "Type": "name",
+                        "Value": "Sam Tailor",
+                        "ValueType": "string"
+                      },
+                      {
+                        "Type": "email",
+                        "Value": "sam.tailor@gmail.com",
+                        "ValueType": "string"
+                      },
+                      {
+                        "Type": "some-api-resource-claim",
+                        "Value": "Sam's Api Resource Custom Claim",
+                        "ValueType": "string"
+                      },
+                      {
+                        "Type": "some-api-scope-claim",
+                        "Value": "Sam's Api Scope Custom Claim",
+                        "ValueType": "string"
+                      },
+                      {
+                        "Type": "some-identity-resource-claim",
+                        "Value": "Sam's Identity Resource Custom Claim",
+                        "ValueType": "string"
+                      }
+                    ]
+                  }
+                ]
+            CLIENTS_CONFIGURATION_PATH: /tmp/config/clients-config.json
+            OVERRIDE_STANDARD_IDENTITY_RESOURCES: True
+        volumes:
+            - .:/tmp/config:ro

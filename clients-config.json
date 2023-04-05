@@ -1,0 +1,44 @@
+[
+  {
+    "Enabled": true,
+    "ClientId": "mock-client-credentials",
+    "ClientSecrets": ["mock-client-credentials-secret"],
+    "RequireClientSecret": true,
+    "AlwaysIncludeUserClaimsInIdToken": true,
+    "ClientName": "Mock client credentials",
+    "AllowOfflineAccess": true,
+    "AccessTokenLifetime": 5,
+    "IdentityTokenLifetime": 5,
+    "AbsoluteRefreshTokenLifetime": 10,
+    "RefreshTokenUsage": "ReUse",
+    "UpdateAccessTokenClaimsOnRefresh": true,
+    "RefreshTokenExpiration": "Sliding",
+    "AccessTokenType": 0,
+    "AllowedGrantTypes": [
+      "client_credentials"
+    ],
+    "AllowedScopes": [
+      "openid",
+      "profile",
+      "some-app-scope-1",
+      "some-app-scope-2",
+      "offline_access",
+      "subscriptionlevel"
+    ],
+    "Claims": [
+      {
+        "Type": "sub",
+        "Value": "foo"
+      },
+      {
+        "Type": "idp",
+        "Value": "oidc_server_mock"
+      },
+      {
+        "Type": "amr",
+        "Value": "pwd"
+      }
+    ],
+    "ClientClaimsPrefix": null
+  }
+]
