@@ -56,13 +56,13 @@ class Claims(BaseModel):
     aud: str
     client_id: str
     sub: str
-    auth_time: int
+    auth_time: Optional[int]
     idp: str
     jti: str
     iat: int
     role: Union[str, List[str], None] = Field(...)
     scope: Union[str, List[str]] = Field(...)
-    amr: List[str]
+    amr: Optional[List[str]]
 
     @staticmethod
     def from_token(token: str) -> Optional[Claims]:
