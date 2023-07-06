@@ -39,6 +39,10 @@
       {
         "Type": "amr",
         "Value": "pwd"
+      },
+      {
+        "Type": "role",
+        "Value": "myrole"
       }
     ],
     "ClientClaimsPrefix": null
