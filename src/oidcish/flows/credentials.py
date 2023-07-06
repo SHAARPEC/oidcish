@@ -1,5 +1,6 @@
 """Client credentials flow."""
 import json
+import os
 import time
 from strenum import StrEnum
 
@@ -19,6 +20,13 @@ class CredentialsSettings(Settings):
     client_secret: str = Field(default=...)
     audience: str = Field(default=...)
 
+    class Config:
+        """Additional configuration."""
+
+        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
+        env_file = ".env"
+        extra = "ignore"
+
 
 class CredentialsStatus(StrEnum):
     """Status for client credentials flow."""
@@ -31,9 +39,9 @@ class CredentialsStatus(StrEnum):
 class CredentialsFlow(AuthenticationFlow):
     """Authenticate with IDP host using client credentials flow.
 
-    The client on the IDP host must support client credentials flow. Authentication arguments
-    can be provided as keywords, environment variables, or in a file whose path is
-    given with the special `_env_file` argument. The variables in this file are
+    The client on the IDP host must support client credentials flow. Authentication
+    arguments can be provided as keywords, environment variables, or in a file whose
+    path is given with the special `_env_file` argument. The variables in this file are
     prefixed with the value given by the OIDCISH_ENV_PREFIX environment variable
     (default: OIDCISH_).
     \f

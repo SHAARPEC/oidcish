@@ -1,5 +1,6 @@
 """Device flow."""
 import json
+import os
 import time
 from strenum import StrEnum
 
@@ -19,6 +20,13 @@ class DeviceSettings(Settings):
     client_secret: str = Field(default=...)
     scope: str = Field(default=...)
     audience: str = Field(default=...)
+
+    class Config:
+        """Additional configuration."""
+
+        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
+        env_file = ".env"
+        extra = "ignore"
 
 
 class DeviceStatus(StrEnum):

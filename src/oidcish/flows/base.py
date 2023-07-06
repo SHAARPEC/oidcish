@@ -118,7 +118,11 @@ class AuthenticationFlow(ABC):
         if self.credentials is None:
             return None
 
-        return models.Claims.from_token(self.credentials.id_token)
+        return (
+            models.Claims.from_token(self.credentials.id_token)
+            if self.credentials.id_token
+            else None
+        )
 
     @final
     @property

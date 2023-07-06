@@ -1,7 +1,4 @@
 """Test data."""
-from uuid import uuid4
-
-import pendulum
 from pydantic import BaseModel
 
 from oidcish import models

@@ -31,7 +31,6 @@ class SigninRequestHandler(http.server.SimpleHTTPRequestHandler):
         )
 
     # Silent server.
-    # pylint: disable=redefined-builtin
     def log_message(self, format, *args):
         return
 

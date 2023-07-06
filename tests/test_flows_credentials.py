@@ -1,5 +1,6 @@
 """Client credentials flow tests."""
 import time
+from typing import Iterator
 
 import httpx
 import pytest
@@ -22,7 +23,7 @@ class TestGeneralCredentialsFlow:
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
         """Mock identity provider."""
-        for (var, value) in self.data.env:
+        for var, value in self.data.env:
             monkeypatch.setenv(var, value)
 
         return respx_mock
@@ -30,9 +31,9 @@ class TestGeneralCredentialsFlow:
     @pytest.fixture(name="auth_credentials")
     def mock_client_credentials(
         self, monkeypatch: pytest.MonkeyPatch
-    ) -> CredentialsFlow:
+    ) -> Iterator[CredentialsFlow]:
         """Mock identity provider."""
-        for (var, value) in {
+        for var, value in {
             "OIDCISH_HOST": "http://oidc_server_mock",
             "OIDCISH_CLIENT_ID": "mock-client-credentials",
             "OIDCISH_CLIENT_SECRET": "mock-client-credentials-secret",
@@ -47,7 +48,7 @@ class TestGeneralCredentialsFlow:
         auth._status = CredentialsStatus.ERROR
 
     @pytest.fixture()
-    def mock_idp(self, respx_mock: respx.MockRouter) -> respx.MockRouter:
+    def mock_idp(self, respx_mock: respx.MockRouter) -> None:
         """Mock identity provider."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"

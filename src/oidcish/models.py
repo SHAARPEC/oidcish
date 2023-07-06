@@ -67,11 +67,11 @@ class Claims(BaseModel):
     @staticmethod
     def from_token(token: str) -> Optional[Claims]:
         """Convert token to claims object."""
+        claims = None
         try:
             claims = Claims.parse_obj(jose.jwt.get_unverified_claims(token))
         except ValidationError as exc:
             print(f"Warning: Failed to parse claims:\n{exc}")
-            claims = None
         finally:
             return claims
 

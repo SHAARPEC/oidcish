@@ -1,11 +1,11 @@
 """Cryptography module."""
 from __future__ import annotations
-from typing import Dict, Mapping, Any
+from typing import Dict, Mapping, Any, MutableMapping
 
 import jose
-import jose.jwk
 import jose.jwt
 import jose.constants
+from jose.jwk import RSAKey
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
@@ -50,30 +50,32 @@ class RsaKeysFactory:
         ).decode("utf-8")
 
     @property
-    def private(self) -> jose.jwk.RSAKey:
+    def private(self) -> RSAKey | None:  # type: ignore
         """The private RSA key."""
-        return jose.jwk.RSAKey(
-            algorithm=self.algorithm,
-            key=self.private_pem,
-        )
+        if RSAKey:
+            return RSAKey(algorithm=self.algorithm, key=self.private_pem)
+        return None
 
     @property
-    def public(self) -> jose.jwk.RSAKey:
+    def public(self) -> RSAKey | None:  # type: ignore
         """The public RSA key."""
-        return jose.jwk.RSAKey(
-            algorithm=self.algorithm,
-            key=self.public_pem,
-        )
+        if RSAKey:
+            return RSAKey(algorithm=self.algorithm, key=self.public_pem)
+        return None
 
     @property
-    def private_dict(self) -> Dict[str, Any]:
+    def private_dict(self) -> Dict[str, Any] | None:
         """The private RSA key as a dictionary."""
-        return {**self.private.to_dict(), **self.headers}
+        if self.private:
+            return {**self.private.to_dict(), **self.headers}
+        return None
 
     @property
-    def public_dict(self) -> Dict[str, Any]:
+    def public_dict(self) -> Dict[str, Any] | None:
         """The public RSA key as a dictionary."""
-        return {**self.public.to_dict(), **self.headers}
+        if self.public:
+            return {**self.public.to_dict(), **self.headers}
+        return None
 
 
 class Codec:
@@ -93,21 +95,25 @@ class Codec:
         key_factory = RsaKeysFactory(key_size=key_size, algorithm=algorithm, **kwargs)
         return cls(key=key_factory)
 
-    def encode(self, claims: Mapping[Any, Any]) -> str:
+    def encode(self, claims: MutableMapping[Any, Any]) -> str | None:
         """Encode claims.
 
         kwargs are used as extra headers.
         """
-        return jose.jwt.encode(
-            claims,
-            key=self._key.private_dict,
-            algorithm=self._key.algorithm,
-            headers=self._key.headers,
-        )
+        if self._key.private_dict:
+            return jose.jwt.encode(
+                claims,
+                key=self._key.private_dict,
+                algorithm=self._key.algorithm,
+                headers=self._key.headers,
+            )
+        return None
 
-    def decode(self, token: str) -> Mapping[Any, Any]:
+    def decode(self, token: str) -> Mapping[Any, Any] | None:
         """Decode the claims in the token."""
-        return jose.jwt.decode(token, key=self._key.public_dict)
+        if self._key.public_dict:
+            return jose.jwt.decode(token, key=self._key.public_dict)
+        return None
 
     @staticmethod
     def get_unverified_claims(token: str) -> Mapping[Any, Any]:

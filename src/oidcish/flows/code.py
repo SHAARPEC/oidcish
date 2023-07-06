@@ -1,5 +1,6 @@
 """Code flow."""
 import json
+import os
 from collections import namedtuple
 from urllib.parse import parse_qs, urljoin, urlparse, urlsplit
 
@@ -26,6 +27,13 @@ class CodeSettings(Settings):
     password: str = Field(default=...)
     audience: str = Field(default=...)
     scope: str = Field(default=...)
+
+    class Config:
+        """Additional configuration."""
+
+        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
+        env_file = ".env"
+        extra = "ignore"
 
 
 class CodeStatus(StrEnum):
@@ -69,7 +77,8 @@ class CodeFlow(AuthenticationFlow):
           host: str, The IDP host name (OIDCISH_HOST).
           client_id: str, The client ID (OIDCISH_CLIENT_ID).
           client_secret: str, The client secret (OIDCISH_CLIENT_SECRET).
-          redirect_uri: str, Must exactly match one of the allowed redirect URIs for the client
+          redirect_uri: str, Must exactly match one of the allowed redirect URIs for
+          the client
             (OIDCISH_CLIENT_ID, default: http://localhost).
           username: str = The user name (OIDCISH_USERNAME).
           password: str = The user password (OIDCISH_PASSWORD).
@@ -79,7 +88,8 @@ class CodeFlow(AuthenticationFlow):
             (OIDCISH_AUDIENCE).
 
         Valid other arguments are:
-          verbose: boolean, Print more information during the login procedure. (Default = False)
+          verbose: boolean, Print more information during the login procedure.
+            (Default = False)
 
     Examples
     --------
@@ -187,6 +197,8 @@ class CodeFlow(AuthenticationFlow):
         """
         pre_login_parameters = self.__pre_login()
 
+        rvf = pre_login_parameters.request_verification_token
+
         response = self._client.post(
             pre_login_parameters.login_url,
             headers={"cookie": pre_login_parameters.cookie},
@@ -196,7 +208,7 @@ class CodeFlow(AuthenticationFlow):
                 "Username": self.settings.username,
                 "Password": self.settings.password,
                 "button": "login",
-                "__RequestVerificationToken": pre_login_parameters.request_verification_token,
+                "__RequestVerificationToken": rvf,
                 "RememberLogin": "false",
             },
         )
