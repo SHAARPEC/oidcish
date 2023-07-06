@@ -1,0 +1,17 @@
+.dockerignore
+.gitignore
+Dockerfile*
+docker-compose.yml
+**/*.ipynb
+dist/
+notebooks*
+notebooks2
+typings
+.venv/
+.env
+.vscode
+.docker
+.git
+.pytest_cache
+.ruff_cache
+.ipynb_checkpoints

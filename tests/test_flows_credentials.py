@@ -43,6 +43,11 @@ class TestGeneralCredentialsFlow:
 
         auth = CredentialsFlow()
 
+        if auth is None:
+            pytest.fail("CredentialsFlow failed to initialize")
+        if auth.credentials is None or auth.access_claims is None:
+            pytest.fail("CredentialsFlow failed to fetch credentials")
+
         yield auth
 
         auth._status = CredentialsStatus.ERROR
@@ -69,14 +74,17 @@ class TestGeneralCredentialsFlow:
         with pytest.raises(httpx.HTTPStatusError) as exc:
             auth = CredentialsFlow(host=self.data.idp.issuer)
             check.equal(auth.status, CredentialsStatus.ERROR)
-            check.equal(exc.response.status_code, 400)
-            check.is_in("error", exc.response.json())
-            check.equal(exc.response.json().get("error"), "invalid_client")
+            check.equal(exc.response.status_code, 400)  # type: ignore
+            check.is_in("error", exc.response.json())  # type: ignore
+            check.equal(exc.response.json().get("error"), "invalid_client")  # type: ignore  # noqa: E501
 
     @pytest.mark.integration
     def test_client_credentials_are_refreshed(
         self, auth_credentials: CredentialsFlow
     ) -> None:
+        assert auth_credentials.credentials is not None
+        assert auth_credentials.access_claims is not None
+
         expires_in = auth_credentials.credentials.expires_in
         original = auth_credentials.access_claims.exp
         refreshed = auth_credentials.access_claims.exp
