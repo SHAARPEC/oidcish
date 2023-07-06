@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0] - 2023-07-06
+
+### Changed
+
+-  Migrate to pydantic v2
+-  Migrate to ruff for linting
+-  Upgrade all dependencies.
+
+### Fixed
+-  Fix integration tests so that they run in docker-compose.
+
 ## [0.3.1] - 2023-04-05
 
 ### Added
