@@ -39,9 +39,9 @@ class Idp(BaseModel):
 class Credentials(BaseModel):
     """Credentials from IDP server."""
 
-    id_token: Optional[str]
+    id_token: Optional[str] = None
     access_token: str
-    refresh_token: Optional[str]
+    refresh_token: Optional[str] = None
     expires_in: int
     token_type: str
     scope: str
@@ -56,22 +56,22 @@ class Claims(BaseModel):
     aud: str
     client_id: str
     sub: str
-    auth_time: Optional[int]
+    auth_time: Optional[int] = None
     idp: str
     jti: str
     iat: int
     role: Union[str, List[str], None] = Field(...)
     scope: Union[str, List[str]] = Field(...)
-    amr: Optional[List[str]]
+    amr: Optional[List[str]] = None
 
     @staticmethod
     def from_token(token: str) -> Optional[Claims]:
         """Convert token to claims object."""
+        claims = None
         try:
-            claims = Claims.parse_obj(jose.jwt.get_unverified_claims(token))
+            claims = Claims.model_validate(jose.jwt.get_unverified_claims(token))
         except ValidationError as exc:
             print(f"Warning: Failed to parse claims:\n{exc}")
-            claims = None
         finally:
             return claims
 
@@ -82,8 +82,8 @@ class Jwks(BaseModel):
     kty: str
     use: str
     kid: str
-    x5t: Optional[str]
+    x5t: Optional[str] = None
     e: str
     n: str
-    x5c: Optional[List[str]]
+    x5c: Optional[List[str]] = None
     alg: str

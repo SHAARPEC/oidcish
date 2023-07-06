@@ -1,28 +1,19 @@
 version: '3'
 services:
-    oidcish:
-        container_name: jl-work-env-oidcish
-        image: jl-work-env
-        ports:
-            - '8888:8888'
-        volumes:
-            - $HOME/Work/base/.local:/home/mambauser/.local
-            - $PWD:/home/mambauser/work
-        working_dir: /home/mambauser/work
-        command:
-            [
-                'jupyter',
-                'lab',
-                '--ip',
-                '0.0.0.0',
-                '--no-browser',
-                '--LabApp.token',
-                '',
-                '--ServerApp.iopub_data_rate_limit',
-                '1.0e10',
-            ]
+    oidcish_tests:
+        container_name: oidcish-tests
+        image: oidcish-tests
+        tty: true
+        build:
+            context: .
+            dockerfile: Dockerfile.tests
         environment:
             COMPOSE_PROJECT_NAME: oidcish
+            OIDCISH_HOST: "http://oidc_server_mock"
+            OIDCISH_TIMEOUT: 30
+            OIDCISH_CLIENT_ID: "mock-client-credentials"
+            OIDCISH_CLIENT_SECRET: "mock-client-credentials-secret"
+            OIDCISH_AUDIENCE: "mock-client-credentials-audience"
     oidc_server_mock:
         container_name: oidc-server-mock
         image: ghcr.io/soluto/oidc-server-mock:latest

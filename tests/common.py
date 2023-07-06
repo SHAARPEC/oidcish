@@ -1,7 +1,4 @@
 """Test data."""
-from uuid import uuid4
-
-import pendulum
 from pydantic import BaseModel
 
 from oidcish import models
@@ -21,7 +18,7 @@ class FlowTestEnv(BaseModel):
 class MockFlowData(BaseModel):
     """Mock data for the flow tests."""
 
-    env: FlowTestEnv = FlowTestEnv.parse_obj(
+    env: FlowTestEnv = FlowTestEnv.model_validate(
         {
             "OIDCISH_HOST": "https://example.idp.com",
             "OIDCISH_CLIENT_ID": "test_client_id",
@@ -31,7 +28,7 @@ class MockFlowData(BaseModel):
         }
     )
 
-    idp: models.Idp = models.Idp.parse_obj(
+    idp: models.Idp = models.Idp.model_validate(
         {
             "issuer": "https://idp.example.com",
             "jwks_uri": "https://idp.example.com/.well-known/openid-configuration/jwks",

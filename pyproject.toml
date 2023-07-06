@@ -1,47 +1,48 @@
 [tool.poetry]
 name = "oidcish"
-version = "0.3.1"
+version = "1.0.0"
 description = "Obtain authentication tokens from OIDC providers."
 authors = ["Erik G. Brandt <erik.brandt@shaarpec.com>"]
 readme = "README.md"
 packages = [{include = "oidcish", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pydantic = "^1.10.5"
-httpx = "^0.23.3"
+python = "^3.10"
+pydantic = "^2.0.2"
+httpx = "^0.24.1"
 pkce = "^1.0.3"
-python-dotenv = "^0.21.1"
+python-dotenv = "^1.0.0"
 background = "^0.2.1"
 python-jose = "^3.3.0"
-cryptography = "^38.0.4"
+cryptography = "^41.0.1"
 pendulum = "^2.1.2"
-StrEnum = "^0.4.9"
-beautifulsoup4 = "^4.11.2"
+StrEnum = "^0.4.15"
+beautifulsoup4 = "^4.12.2"
+pydantic-settings = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
-pylint = "^2.16.2"
-black = "^23.1.0"
-jupyterlab = "^3.6.1"
-jupyterlab-code-formatter = "^1.5.3"
+black = "^23.3.0"
+jupyterlab = "^4.0.2"
+jupyterlab-code-formatter = "^2.2.1"
 isort = "^5.12.0"
-ipython = "^8.10.0"
-jupytext = "^1.14.4"
-pytest = "^7.2.1"
-pytest_check = "^2.1.4"
-Pygments = "^2.14.0"
-devtools = "^0.10.0"
+ipython = "^8.14.0"
+jupytext = "^1.14.7"
+pytest = "^7.4.0"
+pytest_check = "^2.1.5"
+Pygments = "^2.15.1"
+devtools = "^0.11.0"
 respx = "^0.20.1"
-pandas = "^1.5.3"
-pytest-sugar = "^0.9.6"
-pytest-xdist = "^3.2.0"
+pandas = "^2.0.3"
+pytest-sugar = "^0.9.7"
+pytest-xdist = "^3.3.1"
 pytest-icdiff = "^0.6"
 pytest-timeout = "^2.1.0"
+ruff = "^0.0.277"
 
-[tool.pylint.'MESSAGES CONTROL']
-extension-pkg-whitelist = "pydantic"
+[tool.ruff]
+exclude = [".venv", "typings"]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.8"]
 build-backend = "poetry.core.masonry.api"

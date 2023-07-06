@@ -2,7 +2,9 @@
   {
     "Enabled": true,
     "ClientId": "mock-client-credentials",
-    "ClientSecrets": ["mock-client-credentials-secret"],
+    "ClientSecrets": [
+      "mock-client-credentials-secret"
+    ],
     "RequireClientSecret": true,
     "AlwaysIncludeUserClaimsInIdToken": true,
     "ClientName": "Mock client credentials",
@@ -37,6 +39,10 @@
       {
         "Type": "amr",
         "Value": "pwd"
+      },
+      {
+        "Type": "role",
+        "Value": "myrole"
       }
     ],
     "ClientClaimsPrefix": null

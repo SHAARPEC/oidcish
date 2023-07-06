@@ -31,9 +31,9 @@ class CredentialsStatus(StrEnum):
 class CredentialsFlow(AuthenticationFlow):
     """Authenticate with IDP host using client credentials flow.
 
-    The client on the IDP host must support client credentials flow. Authentication arguments
-    can be provided as keywords, environment variables, or in a file whose path is
-    given with the special `_env_file` argument. The variables in this file are
+    The client on the IDP host must support client credentials flow. Authentication
+    arguments can be provided as keywords, environment variables, or in a file whose
+    path is given with the special `_env_file` argument. The variables in this file are
     prefixed with the value given by the OIDCISH_ENV_PREFIX environment variable
     (default: OIDCISH_).
     \f
@@ -93,7 +93,7 @@ class CredentialsFlow(AuthenticationFlow):
 
     def init(self, poll_rate: float = 1.0) -> None:
         """Initiate sign-in."""
-        data = self.settings.dict()
+        data = self.settings.model_dump()
         data.pop("host")
 
         response = httpx.post(
@@ -106,7 +106,7 @@ class CredentialsFlow(AuthenticationFlow):
 
         try:
             response.raise_for_status()
-            self._credentials = models.Credentials.parse_obj(response.json())
+            self._credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CredentialsStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -146,7 +146,7 @@ class CredentialsFlow(AuthenticationFlow):
             return
 
         data = dict(
-            self.settings.dict(),
+            self.settings.model_dump(),
             grant_type="client_credentials",
         )
         data.pop("host")
@@ -155,7 +155,7 @@ class CredentialsFlow(AuthenticationFlow):
 
         try:
             response.raise_for_status()
-            credentials = models.Credentials.parse_obj(response.json())
+            credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CredentialsStatus.ERROR
             raise httpx.HTTPStatusError(

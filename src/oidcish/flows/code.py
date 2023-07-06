@@ -69,7 +69,8 @@ class CodeFlow(AuthenticationFlow):
           host: str, The IDP host name (OIDCISH_HOST).
           client_id: str, The client ID (OIDCISH_CLIENT_ID).
           client_secret: str, The client secret (OIDCISH_CLIENT_SECRET).
-          redirect_uri: str, Must exactly match one of the allowed redirect URIs for the client
+          redirect_uri: str, Must exactly match one of the allowed redirect URIs for
+          the client
             (OIDCISH_CLIENT_ID, default: http://localhost).
           username: str = The user name (OIDCISH_USERNAME).
           password: str = The user password (OIDCISH_PASSWORD).
@@ -79,7 +80,8 @@ class CodeFlow(AuthenticationFlow):
             (OIDCISH_AUDIENCE).
 
         Valid other arguments are:
-          verbose: boolean, Print more information during the login procedure. (Default = False)
+          verbose: boolean, Print more information during the login procedure.
+            (Default = False)
 
     Examples
     --------
@@ -187,6 +189,8 @@ class CodeFlow(AuthenticationFlow):
         """
         pre_login_parameters = self.__pre_login()
 
+        rvf = pre_login_parameters.request_verification_token
+
         response = self._client.post(
             pre_login_parameters.login_url,
             headers={"cookie": pre_login_parameters.cookie},
@@ -196,7 +200,7 @@ class CodeFlow(AuthenticationFlow):
                 "Username": self.settings.username,
                 "Password": self.settings.password,
                 "button": "login",
-                "__RequestVerificationToken": pre_login_parameters.request_verification_token,
+                "__RequestVerificationToken": rvf,
                 "RememberLogin": "false",
             },
         )
@@ -267,7 +271,7 @@ class CodeFlow(AuthenticationFlow):
         # Parse credentials
         try:
             response.raise_for_status()
-            credentials = models.Credentials.parse_obj(response.json())
+            credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CodeStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -299,7 +303,7 @@ class CodeFlow(AuthenticationFlow):
         return
 
     #     data = dict(
-    #         self.settings.dict(),
+    #         self.settings.model_dump(),
     #         grant_type="refresh_token",
     #         refresh_token=self.credentials.refresh_token,
     #     )
@@ -309,7 +313,7 @@ class CodeFlow(AuthenticationFlow):
 
     #     try:
     #         response.raise_for_status()
-    #         credentials = models.Credentials.parse_obj(response.json())
+    #         credentials = models.Credentials.model_validate(response.json())
     #     except httpx.HTTPStatusError as exc:
     #         self._status = DeviceStatus.ERROR
     #         raise httpx.HTTPStatusError(

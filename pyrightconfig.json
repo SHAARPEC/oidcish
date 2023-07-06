@@ -1,0 +1,11 @@
+{
+    "ignore": [
+        "tests/conftest.py"
+    ],
+    "exclude": [
+        "docs",
+        "**/.eggs",
+        "**/notebooks"
+    ],
+    "python.analysis.useLibraryCodeForTypes": true
+}

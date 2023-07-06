@@ -99,7 +99,7 @@ class DeviceFlow(AuthenticationFlow):
     @background.task
     def __signin_once_confirmed(self, verification: DeviceVerification) -> None:
         """Background tasks that signs in once the user confirms the device."""
-        data = self.settings.dict()
+        data = self.settings.model_dump()
         data.pop("host")
 
         start = time.time()
@@ -117,7 +117,7 @@ class DeviceFlow(AuthenticationFlow):
 
             try:
                 response.raise_for_status()
-                self._credentials = models.Credentials.parse_obj(response.json())
+                self._credentials = models.Credentials.model_validate(response.json())
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 400:
                     error_msg = exc.response.json().get("error")
@@ -173,14 +173,14 @@ class DeviceFlow(AuthenticationFlow):
 
     def init(self, poll_rate: float = 1.0) -> None:
         """Initiate sign-in."""
-        data = self.settings.dict()
+        data = self.settings.model_dump()
         data.pop("host")
 
         response = self._client.post(self.idp.device_authorization_endpoint, data=data)
 
         try:
             response.raise_for_status()
-            verification = DeviceVerification.parse_obj(response.json())
+            verification = DeviceVerification.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = DeviceStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -221,7 +221,7 @@ class DeviceFlow(AuthenticationFlow):
             return
 
         data = dict(
-            self.settings.dict(),
+            self.settings.model_dump(),
             grant_type="refresh_token",
             refresh_token=self.credentials.refresh_token,
         )
@@ -231,7 +231,7 @@ class DeviceFlow(AuthenticationFlow):
 
         try:
             response.raise_for_status()
-            credentials = models.Credentials.parse_obj(response.json())
+            credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = DeviceStatus.ERROR
             raise httpx.HTTPStatusError(

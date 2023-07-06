@@ -13,9 +13,10 @@ from . import common
 
 def mock_device() -> DeviceVerification:
     """Mock data for device verification."""
-    return DeviceVerification.parse_obj(
+    code = "4A53BBC987BB24AF360F9EE38DCAD1CC346F77702D3BFC5D69518DF407366221"
+    return DeviceVerification.model_validate(
         {
-            "device_code": "4A53BBC987BB24AF360F9EE38DCAD1CC346F77702D3BFC5D69518DF407366221",
+            "device_code": code,
             "user_code": "974954262",
             "verification_uri": "https://idp.example.com/device",
             "verification_uri_complete": "https://idp.example.com/device?userCode=974954262",
@@ -37,7 +38,7 @@ class TestConnectionErrors:
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
         """Mock identity provider."""
-        for (var, value) in self.data.env:
+        for var, value in self.data.env:
             monkeypatch.setenv(var, value)
 
         return respx_mock
@@ -71,10 +72,10 @@ class TestConnectionErrors:
     def test_status_error_when_no_device_authorization_endpoint(
         self, respx_mock: respx.MockRouter
     ) -> None:
-        """Test that 404 response from device authorization endpoint raises status error."""
+        """Test that 404 response from authorization endpoint raises status error."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
@@ -99,7 +100,7 @@ class TestDeviceParsingErrors:
         self, monkeypatch: pytest.MonkeyPatch, respx_mock: respx.MockRouter
     ) -> respx.MockRouter:
         """Mock environment."""
-        for (var, value) in self.data.env:
+        for var, value in self.data.env:
             monkeypatch.setenv(var, value)
 
         return respx_mock
@@ -109,12 +110,12 @@ class TestDeviceParsingErrors:
         """Mock identity provider."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
         respx_mock.post(self.data.idp.device_authorization_endpoint).respond(
-            status_code=200, json=self.device.dict()
+            status_code=200, json=self.device.model_dump()
         )
 
         return respx_mock
@@ -123,10 +124,10 @@ class TestDeviceParsingErrors:
     def test_validation_error_when_no_json_from_device_authorization_endpoint(
         self, respx_mock: respx.MockRouter
     ) -> None:
-        """Test that 200 for device authorization endpoint raises value error if not json."""
+        """Test that 200 for authorization endpoint raises value error if not json."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
