@@ -1,6 +1,5 @@
 """Code flow."""
 import json
-import os
 from collections import namedtuple
 from urllib.parse import parse_qs, urljoin, urlparse, urlsplit
 
@@ -27,13 +26,6 @@ class CodeSettings(Settings):
     password: str = Field(default=...)
     audience: str = Field(default=...)
     scope: str = Field(default=...)
-
-    class Config:
-        """Additional configuration."""
-
-        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
-        env_file = ".env"
-        extra = "ignore"
 
 
 class CodeStatus(StrEnum):
@@ -279,7 +271,7 @@ class CodeFlow(AuthenticationFlow):
         # Parse credentials
         try:
             response.raise_for_status()
-            credentials = models.Credentials.parse_obj(response.json())
+            credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CodeStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -311,7 +303,7 @@ class CodeFlow(AuthenticationFlow):
         return
 
     #     data = dict(
-    #         self.settings.dict(),
+    #         self.settings.model_dump(),
     #         grant_type="refresh_token",
     #         refresh_token=self.credentials.refresh_token,
     #     )
@@ -321,7 +313,7 @@ class CodeFlow(AuthenticationFlow):
 
     #     try:
     #         response.raise_for_status()
-    #         credentials = models.Credentials.parse_obj(response.json())
+    #         credentials = models.Credentials.model_validate(response.json())
     #     except httpx.HTTPStatusError as exc:
     #         self._status = DeviceStatus.ERROR
     #         raise httpx.HTTPStatusError(

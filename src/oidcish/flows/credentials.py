@@ -1,6 +1,5 @@
 """Client credentials flow."""
 import json
-import os
 import time
 from strenum import StrEnum
 
@@ -19,13 +18,6 @@ class CredentialsSettings(Settings):
     client_id: str = Field(default=...)
     client_secret: str = Field(default=...)
     audience: str = Field(default=...)
-
-    class Config:
-        """Additional configuration."""
-
-        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
-        env_file = ".env"
-        extra = "ignore"
 
 
 class CredentialsStatus(StrEnum):
@@ -101,7 +93,7 @@ class CredentialsFlow(AuthenticationFlow):
 
     def init(self, poll_rate: float = 1.0) -> None:
         """Initiate sign-in."""
-        data = self.settings.dict()
+        data = self.settings.model_dump()
         data.pop("host")
 
         response = httpx.post(
@@ -114,7 +106,7 @@ class CredentialsFlow(AuthenticationFlow):
 
         try:
             response.raise_for_status()
-            self._credentials = models.Credentials.parse_obj(response.json())
+            self._credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CredentialsStatus.ERROR
             raise httpx.HTTPStatusError(
@@ -154,7 +146,7 @@ class CredentialsFlow(AuthenticationFlow):
             return
 
         data = dict(
-            self.settings.dict(),
+            self.settings.model_dump(),
             grant_type="client_credentials",
         )
         data.pop("host")
@@ -163,7 +155,7 @@ class CredentialsFlow(AuthenticationFlow):
 
         try:
             response.raise_for_status()
-            credentials = models.Credentials.parse_obj(response.json())
+            credentials = models.Credentials.model_validate(response.json())
         except httpx.HTTPStatusError as exc:
             self._status = CredentialsStatus.ERROR
             raise httpx.HTTPStatusError(

@@ -57,7 +57,7 @@ class TestGeneralCredentialsFlow:
         """Mock identity provider."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
 
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}

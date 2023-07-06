@@ -7,10 +7,11 @@ from typing import List, Optional, final
 import httpx
 import jose
 import jose.jwt
-from pydantic import BaseSettings, Field, parse_obj_as
+from pydantic import ConfigDict, Field, TypeAdapter
 from strenum import StrEnum
 
 from oidcish import models
+from pydantic_settings import BaseSettings
 
 
 class Flows(Enum):
@@ -32,13 +33,11 @@ class Settings(BaseSettings):
     host: str = Field(default=None)
     timeout: float = Field(default=3.0)
 
-    # pylint: disable=too-few-public-methods
-    class Config:
-        """Additional configuration."""
-
-        env_prefix = os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_")
-        env_file = ".env"
-        extra = "ignore"
+    model_config = ConfigDict(  # type: ignore
+        env_prefix=os.environ.get("OIDCISH_ENV_PREFIX", "oidcish_"),
+        env_file=".env",
+        extra="ignore",
+    )
 
 
 class AuthenticationFlow(ABC):
@@ -59,7 +58,7 @@ class AuthenticationFlow(ABC):
         response = self._client.get(".well-known/openid-configuration")
         response.raise_for_status()
 
-        return models.Idp.parse_obj(response.json())
+        return models.Idp.model_validate(response.json())
 
     @final
     def get_jwks(self) -> List[models.Jwks]:
@@ -67,7 +66,9 @@ class AuthenticationFlow(ABC):
         response = self._client.get(self.idp.jwks_uri)
         response.raise_for_status()
 
-        return parse_obj_as(List[models.Jwks], response.json().get("keys"))
+        ta = TypeAdapter(List[models.Jwks])
+
+        return ta.validate_python(response.json().get("keys"))
 
     @final
     @property

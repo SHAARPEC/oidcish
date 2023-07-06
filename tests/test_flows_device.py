@@ -14,7 +14,7 @@ from . import common
 def mock_device() -> DeviceVerification:
     """Mock data for device verification."""
     code = "4A53BBC987BB24AF360F9EE38DCAD1CC346F77702D3BFC5D69518DF407366221"
-    return DeviceVerification.parse_obj(
+    return DeviceVerification.model_validate(
         {
             "device_code": code,
             "user_code": "974954262",
@@ -75,7 +75,7 @@ class TestConnectionErrors:
         """Test that 404 response from authorization endpoint raises status error."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
@@ -110,12 +110,12 @@ class TestDeviceParsingErrors:
         """Mock identity provider."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
         respx_mock.post(self.data.idp.device_authorization_endpoint).respond(
-            status_code=200, json=self.device.dict()
+            status_code=200, json=self.device.model_dump()
         )
 
         return respx_mock
@@ -127,7 +127,7 @@ class TestDeviceParsingErrors:
         """Test that 200 for authorization endpoint raises value error if not json."""
         respx_mock.get(
             f"{self.data.idp.issuer}/.well-known/openid-configuration"
-        ).respond(status_code=200, json=self.data.idp.dict())
+        ).respond(status_code=200, json=self.data.idp.model_dump())
         respx_mock.get(self.data.idp.jwks_uri).respond(
             status_code=200, json={"keys": [self.codec.key.public_dict]}
         )
