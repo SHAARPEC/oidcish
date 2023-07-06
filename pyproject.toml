@@ -18,6 +18,7 @@ cryptography = "^41.0.1"
 pendulum = "^2.1.2"
 StrEnum = "^0.4.15"
 beautifulsoup4 = "^4.12.2"
+pydantic-settings = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -38,7 +39,6 @@ pytest-xdist = "^3.3.1"
 pytest-icdiff = "^0.6"
 pytest-timeout = "^2.1.0"
 ruff = "^0.0.277"
-bump-pydantic = "^0.1.0"
 
 [tool.ruff]
 exclude = [".venv", "typings"]
