@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oidcish"
-version = "1.0.0"
+version = "1.0.1"
 description = "Obtain authentication tokens from OIDC providers."
 authors = ["Erik G. Brandt <erik.brandt@shaarpec.com>"]
 readme = "README.md"
@@ -39,6 +39,7 @@ pytest-xdist = "^3.3.1"
 pytest-icdiff = "^0.6"
 pytest-timeout = "^2.1.0"
 ruff = "^0.0.277"
+rich = "^13.4.2"
 
 [tool.ruff]
 exclude = [".venv", "typings"]
