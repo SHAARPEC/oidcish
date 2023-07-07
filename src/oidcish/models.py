@@ -55,9 +55,9 @@ class Claims(BaseModel):
     iss: str
     aud: str
     client_id: str
-    sub: str
+    sub: Optional[str] = None
     auth_time: Optional[int] = None
-    idp: str
+    idp: Optional[str] = None
     jti: str
     iat: int
     role: Union[str, List[str], None] = Field(...)
