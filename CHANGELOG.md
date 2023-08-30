@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2023-08-30
+
+### Changed
+
+-   Made 'jti' claim optional (some IDP's don't provide it).
+
 ## [1.0.1] - 2023-07-07
 
 ### Changed
