@@ -58,7 +58,7 @@ class Claims(BaseModel):
     sub: Optional[str] = None
     auth_time: Optional[int] = None
     idp: Optional[str] = None
-    jti: str
+    jti: Optional[str] = None
     iat: int
     role: Union[str, List[str], None] = Field(...)
     scope: Union[str, List[str]] = Field(...)
