@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 import jose
 import jose.jwt
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 
 class Idp(BaseModel):
@@ -60,9 +60,16 @@ class Claims(BaseModel):
     idp: Optional[str] = None
     jti: Optional[str] = None
     iat: int
-    role: Union[str, List[str], None] = Field(...)
+    role: Optional[Union[str, List[str]]] = None
+    client_role: Optional[str] = None
     scope: Union[str, List[str]] = Field(...)
     amr: Optional[List[str]] = None
+
+    @model_validator(mode="after")
+    def check_role_or_client_role(self):
+        if not self.role and not self.client_role:
+            raise ValueError("One of the 'role' or 'client_role' claims is required.")
+        return self
 
     @staticmethod
     def from_token(token: str) -> Optional[Claims]:

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.3] - 2023-10-08
+
+### Changed
+
+-  One of the `role`` and `client_role`` claims is now required in the access token.
+
 ## [1.0.2] - 2023-08-30
 
 ### Changed
