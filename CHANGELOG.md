@@ -4,7 +4,7 @@
 
 ### Changed
 
--  One of the `role`` and `client_role`` claims is now required in the access token.
+-  One of the `role` and `client_role` claims is now required in the access token.
 
 ## [1.0.2] - 2023-08-30
 
